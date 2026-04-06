@@ -6,8 +6,38 @@
  * or related systems. Please exercise caution as any changes
  * made to this file may be overwritten.
  * ------------------------------------------------------------
- */{
+ */
+{
   "sections": {
+    "custom_banner_mcA9xH": {
+      "type": "custom-banner",
+      "name": "Custom Banner",
+      "settings": {
+        "background_color": "#ffffff",
+        "logo_text": "TISSO VISON",
+        "logo_link": "",
+        "logo_color": "#111111",
+        "announcement_text": "Find the ideal gift for your loved ones.",
+        "announcement_color": "#333333",
+        "topbar_btn_label": "CHOOSE GIFT",
+        "topbar_btn_link": "",
+        "topbar_btn_bg": "#f0d84a",
+        "topbar_btn_color": "#111111",
+        "heading": "The Gift Guide",
+        "heading_color": "#111111",
+        "subtext": "Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season.",
+        "subtext_color": "#444444",
+        "hero_image": "shopify://shop_images/Group_1000008197.png",
+        "cta_label": "SHOP NOW",
+        "cta_link": "",
+        "cta_bg": "#111111",
+        "cta_color": "#ffffff",
+        "ticker_text": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL",
+        "ticker_speed": 30,
+        "ticker_bg": "#ffffff",
+        "ticker_color": "#111111"
+      }
+    },
     "hero_jVaWmY": {
       "type": "hero",
       "blocks": {
@@ -57,6 +87,7 @@
         "text_YLPk4p",
         "button_H9gpTf"
       ],
+      "disabled": true,
       "name": "t:names.hero",
       "settings": {
         "media_type_1": "image",
@@ -65,6 +96,7 @@
         "custom_mobile_media": false,
         "media_type_1_mobile": "image",
         "media_type_2_mobile": "image",
+        "link": "",
         "open_in_new_tab": false,
         "content_direction": "column",
         "vertical_on_mobile": true,
@@ -284,6 +316,7 @@
     }
   },
   "order": [
+    "custom_banner_mcA9xH",
     "hero_jVaWmY",
     "product_list_fa6P9H"
   ]
