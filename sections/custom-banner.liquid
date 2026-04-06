@@ -18,6 +18,7 @@
     border-bottom: 1px solid #e0e0e0;
     position: relative;
     z-index: 10;
+    background: {{ section.settings.background_color }};
   }
 
   .custom-banner__logo {
@@ -81,59 +82,88 @@
     transform: translateX(5px);
   }
 
-  /* ── HERO AREA ── */
+  /* ── HERO: FULL WIDTH IMAGE WITH OVERLAY TEXT ── */
   .custom-banner__hero {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    min-height: 520px;
     position: relative;
+    width: 100%;
+    min-height: {{ section.settings.banner_height }}px;
+    overflow: hidden;
   }
 
-  /* Left Content */
-  .custom-banner__content {
+  /* Full-width background image */
+  .custom-banner__hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  .custom-banner__hero-placeholder {
+    position: absolute;
+    inset: 0;
+    background: #f0f0f0;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    padding: 60px 40px 60px 48px;
+    color: #999;
+    font-size: 14px;
+  }
+
+  /* Optional overlay for text readability */
+  .custom-banner__overlay {
+    position: absolute;
+    inset: 0;
+    background: {{ section.settings.overlay_color }};
+    opacity: {{ section.settings.overlay_opacity | divided_by: 100.0 }};
+    pointer-events: none;
+  }
+
+  /* Text content — bottom left */
+  .custom-banner__content {
+    position: absolute;
+    bottom: 48px;
+    left: 48px;
     z-index: 2;
-    position: relative;
+    max-width: 480px;
   }
 
   .custom-banner__heading {
-    font-size: clamp(42px, 5vw, 72px);
+    font-size: clamp(36px, 4.5vw, 64px);
     font-weight: 900;
     line-height: 1.05;
     color: {{ section.settings.heading_color }};
-    margin: 0 0 24px;
+    margin: 0 0 16px;
     letter-spacing: -1px;
   }
 
   .custom-banner__subtext {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.6;
     color: {{ section.settings.subtext_color }};
-    max-width: 420px;
-    margin: 0 0 40px;
+    margin: 0 0 32px;
   }
 
+  /* SHOP NOW button */
   .custom-banner__cta {
     display: inline-flex;
     align-items: center;
     gap: 12px;
     background: {{ section.settings.cta_bg }};
     color: {{ section.settings.cta_color }};
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
-    padding: 16px 32px;
+    padding: 15px 32px;
     text-decoration: none;
-    border: 2px solid {{ section.settings.cta_bg }};
     cursor: pointer;
     position: relative;
     overflow: hidden;
     width: fit-content;
-    transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .custom-banner__cta::before {
@@ -154,7 +184,7 @@
   .custom-banner__cta:hover {
     color: {{ section.settings.cta_bg }};
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   }
 
   .custom-banner__cta span {
@@ -171,31 +201,6 @@
 
   .custom-banner__cta:hover .btn-arrow {
     transform: translateX(6px);
-  }
-
-  /* Right image area */
-  .custom-banner__image-wrap {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .custom-banner__image-wrap img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .custom-banner__image-wrap .no-image-placeholder {
-    width: 100%;
-    height: 100%;
-    min-height: 400px;
-    background: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999;
-    font-size: 14px;
   }
 
   /* ── TICKER / MARQUEE ── */
@@ -218,7 +223,7 @@
   }
 
   .custom-banner__ticker-text {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -250,15 +255,18 @@
     }
 
     .custom-banner__hero {
-      grid-template-columns: 1fr;
+      min-height: 420px;
     }
 
     .custom-banner__content {
-      padding: 40px 24px;
+      bottom: 32px;
+      left: 24px;
+      right: 24px;
+      max-width: 100%;
     }
 
-    .custom-banner__image-wrap {
-      min-height: 300px;
+    .custom-banner__heading {
+      font-size: 32px;
     }
   }
 </style>
@@ -281,8 +289,27 @@
     </a>
   </div>
 
-  <!-- HERO -->
+  <!-- HERO: FULL WIDTH IMAGE + OVERLAY TEXT -->
   <div class="custom-banner__hero">
+
+    {% if section.settings.hero_image %}
+      <img
+        class="custom-banner__hero-image"
+        src="{{ section.settings.hero_image | image_url: width: 2000 }}"
+        alt="{{ section.settings.hero_image.alt | escape }}"
+        loading="eager"
+        width="2000"
+      >
+    {% else %}
+      <div class="custom-banner__hero-placeholder">
+        Add a full-width image in the customizer
+      </div>
+    {% endif %}
+
+    <!-- Optional dark overlay for text readability -->
+    <div class="custom-banner__overlay"></div>
+
+    <!-- Text overlay bottom-left -->
     <div class="custom-banner__content">
       <h2 class="custom-banner__heading">{{ section.settings.heading }}</h2>
       <p class="custom-banner__subtext">{{ section.settings.subtext }}</p>
@@ -292,18 +319,6 @@
       </a>
     </div>
 
-    <div class="custom-banner__image-wrap">
-      {% if section.settings.hero_image %}
-        <img
-          src="{{ section.settings.hero_image | image_url: width: 900 }}"
-          alt="{{ section.settings.hero_image.alt | escape }}"
-          loading="lazy"
-          width="900"
-        >
-      {% else %}
-        <div class="no-image-placeholder">Add an image in the customizer</div>
-      {% endif %}
-    </div>
   </div>
 
   <!-- TICKER -->
@@ -405,7 +420,41 @@
 
     {
       "type": "header",
-      "content": "🖼️ Hero Content"
+      "content": "🖼️ Hero Banner Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "hero_image",
+      "label": "Full-Width Banner Image"
+    },
+    {
+      "type": "range",
+      "id": "banner_height",
+      "label": "Banner Height (px)",
+      "min": 300,
+      "max": 900,
+      "step": 50,
+      "default": 600
+    },
+    {
+      "type": "color",
+      "id": "overlay_color",
+      "label": "Overlay Color (for text readability)",
+      "default": "#000000"
+    },
+    {
+      "type": "range",
+      "id": "overlay_opacity",
+      "label": "Overlay Opacity (%)",
+      "min": 0,
+      "max": 70,
+      "step": 5,
+      "default": 0
+    },
+
+    {
+      "type": "header",
+      "content": "✏️ Hero Text"
     },
     {
       "type": "text",
@@ -429,12 +478,7 @@
       "type": "color",
       "id": "subtext_color",
       "label": "Subtext Color",
-      "default": "#444444"
-    },
-    {
-      "type": "image_picker",
-      "id": "hero_image",
-      "label": "Hero Image (Right Side)"
+      "default": "#333333"
     },
 
     {
