@@ -1,0 +1,507 @@
+{% comment %} Custom Banner Section {% endcomment %}
+
+<style>
+  .custom-banner {
+    position: relative;
+    width: 100%;
+    font-family: sans-serif;
+    overflow: hidden;
+    background: {{ section.settings.background_color }};
+  }
+
+  /* ── TOP NAV BAR ── */
+  .custom-banner__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+    border-bottom: 1px solid #e0e0e0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .custom-banner__logo {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: {{ section.settings.logo_color }};
+    text-decoration: none;
+  }
+
+  .custom-banner__announcement {
+    font-size: 14px;
+    color: {{ section.settings.announcement_color }};
+    letter-spacing: 0.5px;
+  }
+
+  .custom-banner__topbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: {{ section.settings.topbar_btn_bg }};
+    color: {{ section.settings.topbar_btn_color }};
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .custom-banner__topbar-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.08);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .custom-banner__topbar-btn:hover::after {
+    transform: translateX(0);
+  }
+
+  .custom-banner__topbar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  }
+
+  .custom-banner__topbar-btn .btn-arrow {
+    display: inline-block;
+    transition: transform 0.3s ease;
+  }
+
+  .custom-banner__topbar-btn:hover .btn-arrow {
+    transform: translateX(5px);
+  }
+
+  /* ── HERO AREA ── */
+  .custom-banner__hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 520px;
+    position: relative;
+  }
+
+  /* Left Content */
+  .custom-banner__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 40px 60px 48px;
+    z-index: 2;
+    position: relative;
+  }
+
+  .custom-banner__heading {
+    font-size: clamp(42px, 5vw, 72px);
+    font-weight: 900;
+    line-height: 1.05;
+    color: {{ section.settings.heading_color }};
+    margin: 0 0 24px;
+    letter-spacing: -1px;
+  }
+
+  .custom-banner__subtext {
+    font-size: 16px;
+    line-height: 1.6;
+    color: {{ section.settings.subtext_color }};
+    max-width: 420px;
+    margin: 0 0 40px;
+  }
+
+  .custom-banner__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: {{ section.settings.cta_bg }};
+    color: {{ section.settings.cta_color }};
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 16px 32px;
+    text-decoration: none;
+    border: 2px solid {{ section.settings.cta_bg }};
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    width: fit-content;
+    transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .custom-banner__cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: {{ section.settings.cta_color }};
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+    z-index: 0;
+  }
+
+  .custom-banner__cta:hover::before {
+    transform: scaleX(1);
+  }
+
+  .custom-banner__cta:hover {
+    color: {{ section.settings.cta_bg }};
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+
+  .custom-banner__cta span {
+    position: relative;
+    z-index: 1;
+  }
+
+  .custom-banner__cta .btn-arrow {
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
+  }
+
+  .custom-banner__cta:hover .btn-arrow {
+    transform: translateX(6px);
+  }
+
+  /* Right image area */
+  .custom-banner__image-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .custom-banner__image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .custom-banner__image-wrap .no-image-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 14px;
+  }
+
+  /* ── TICKER / MARQUEE ── */
+  .custom-banner__ticker {
+    background: {{ section.settings.ticker_bg }};
+    color: {{ section.settings.ticker_color }};
+    padding: 12px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .custom-banner__ticker-inner {
+    display: inline-flex;
+    animation: marquee {{ section.settings.ticker_speed }}s linear infinite;
+  }
+
+  .custom-banner__ticker-inner:hover {
+    animation-play-state: paused;
+  }
+
+  .custom-banner__ticker-text {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 0 60px;
+  }
+
+  .custom-banner__ticker-separator {
+    padding: 0 10px;
+    opacity: 0.4;
+  }
+
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .custom-banner__topbar {
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 12px 20px;
+    }
+
+    .custom-banner__announcement {
+      order: 3;
+      width: 100%;
+      text-align: center;
+    }
+
+    .custom-banner__hero {
+      grid-template-columns: 1fr;
+    }
+
+    .custom-banner__content {
+      padding: 40px 24px;
+    }
+
+    .custom-banner__image-wrap {
+      min-height: 300px;
+    }
+  }
+</style>
+
+<section class="custom-banner" id="custom-banner-{{ section.id }}">
+
+  <!-- TOP BAR -->
+  <div class="custom-banner__topbar">
+    <a href="{{ section.settings.logo_link }}" class="custom-banner__logo">
+      {{ section.settings.logo_text }}
+    </a>
+
+    <p class="custom-banner__announcement">
+      {{ section.settings.announcement_text }}
+    </p>
+
+    <a href="{{ section.settings.topbar_btn_link }}" class="custom-banner__topbar-btn">
+      <span>{{ section.settings.topbar_btn_label }}</span>
+      <span class="btn-arrow">→</span>
+    </a>
+  </div>
+
+  <!-- HERO -->
+  <div class="custom-banner__hero">
+    <div class="custom-banner__content">
+      <h2 class="custom-banner__heading">{{ section.settings.heading }}</h2>
+      <p class="custom-banner__subtext">{{ section.settings.subtext }}</p>
+      <a href="{{ section.settings.cta_link }}" class="custom-banner__cta">
+        <span>{{ section.settings.cta_label }}</span>
+        <span class="btn-arrow">→</span>
+      </a>
+    </div>
+
+    <div class="custom-banner__image-wrap">
+      {% if section.settings.hero_image %}
+        <img
+          src="{{ section.settings.hero_image | image_url: width: 900 }}"
+          alt="{{ section.settings.hero_image.alt | escape }}"
+          loading="lazy"
+          width="900"
+        >
+      {% else %}
+        <div class="no-image-placeholder">Add an image in the customizer</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="custom-banner__ticker">
+    <div class="custom-banner__ticker-inner">
+      {% assign ticker_repeats = "1,2,3,4,5,6,7,8" | split: "," %}
+      {% for i in ticker_repeats %}
+        <span class="custom-banner__ticker-text">{{ section.settings.ticker_text }}</span>
+        <span class="custom-banner__ticker-separator">✦</span>
+      {% endfor %}
+    </div>
+  </div>
+
+</section>
+
+{% schema %}
+{
+  "name": "Custom Banner",
+  "tag": "section",
+  "settings": [
+
+    {
+      "type": "header",
+      "content": "🎨 Background"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Color",
+      "default": "#ffffff"
+    },
+
+    {
+      "type": "header",
+      "content": "🔠 Logo / Brand"
+    },
+    {
+      "type": "text",
+      "id": "logo_text",
+      "label": "Logo Text",
+      "default": "TISSO VISON"
+    },
+    {
+      "type": "url",
+      "id": "logo_link",
+      "label": "Logo Link"
+    },
+    {
+      "type": "color",
+      "id": "logo_color",
+      "label": "Logo Text Color",
+      "default": "#111111"
+    },
+
+    {
+      "type": "header",
+      "content": "📢 Announcement Bar"
+    },
+    {
+      "type": "text",
+      "id": "announcement_text",
+      "label": "Announcement Text",
+      "default": "Find the ideal gift for your loved ones."
+    },
+    {
+      "type": "color",
+      "id": "announcement_color",
+      "label": "Announcement Text Color",
+      "default": "#333333"
+    },
+
+    {
+      "type": "header",
+      "content": "🟡 Top Bar Button"
+    },
+    {
+      "type": "text",
+      "id": "topbar_btn_label",
+      "label": "Button Label",
+      "default": "CHOOSE GIFT"
+    },
+    {
+      "type": "url",
+      "id": "topbar_btn_link",
+      "label": "Button Link"
+    },
+    {
+      "type": "color",
+      "id": "topbar_btn_bg",
+      "label": "Button Background",
+      "default": "#f0d84a"
+    },
+    {
+      "type": "color",
+      "id": "topbar_btn_color",
+      "label": "Button Text Color",
+      "default": "#111111"
+    },
+
+    {
+      "type": "header",
+      "content": "🖼️ Hero Content"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "The Gift Guide"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading Color",
+      "default": "#111111"
+    },
+    {
+      "type": "textarea",
+      "id": "subtext",
+      "label": "Subtext / Description",
+      "default": "Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season."
+    },
+    {
+      "type": "color",
+      "id": "subtext_color",
+      "label": "Subtext Color",
+      "default": "#444444"
+    },
+    {
+      "type": "image_picker",
+      "id": "hero_image",
+      "label": "Hero Image (Right Side)"
+    },
+
+    {
+      "type": "header",
+      "content": "⬛ Shop Now Button"
+    },
+    {
+      "type": "text",
+      "id": "cta_label",
+      "label": "Button Label",
+      "default": "SHOP NOW"
+    },
+    {
+      "type": "url",
+      "id": "cta_link",
+      "label": "Button Link"
+    },
+    {
+      "type": "color",
+      "id": "cta_bg",
+      "label": "Button Background",
+      "default": "#111111"
+    },
+    {
+      "type": "color",
+      "id": "cta_color",
+      "label": "Button Text Color",
+      "default": "#ffffff"
+    },
+
+    {
+      "type": "header",
+      "content": "📜 Ticker / Marquee Bar"
+    },
+    {
+      "type": "text",
+      "id": "ticker_text",
+      "label": "Ticker Text",
+      "default": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL"
+    },
+    {
+      "type": "range",
+      "id": "ticker_speed",
+      "label": "Ticker Speed (seconds)",
+      "min": 10,
+      "max": 60,
+      "step": 5,
+      "default": 30
+    },
+    {
+      "type": "color",
+      "id": "ticker_bg",
+      "label": "Ticker Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "ticker_color",
+      "label": "Ticker Text Color",
+      "default": "#111111"
+    }
+
+  ],
+  "presets": [
+    {
+      "name": "Custom Banner"
+    }
+  ]
+}
+{% endschema %}
