@@ -419,40 +419,60 @@
   display: block;
 }
 
-/* ── COLOR PILLS (matching Figma's pill row) ── */
+/* ── COLOR PILLS (matching Figma's grid layout) ── */
+.pgp-pills-wrapper {
+  /* Wrapper creates a border around all pills */
+  border: 1.5px solid #111;
+  border-radius: 0;
+  padding: 0;
+  display: inline-block;
+  width: 100%;
+}
+
 .pgp-opt__pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* Two equal-width columns matching Figma */
+  gap: 0;
+  margin: 0;
 }
 
 .pgp-pill {
-  padding: 8px 20px;
-  border: 1.5px solid #bbb;
+  padding: 10px 16px;
+  border: none;
+  border-right: 1.5px solid #111;   /* Divider between pills */
   background: #fff;
-  border-radius: 3px;
+  border-radius: 0;
   font-size: 0.82rem;
   color: #333;
   cursor: pointer;
-  transition: border-color 0.18s, background 0.18s;
+  transition: background 0.18s, color 0.18s;
+  text-align: center;
+  font-weight: 500;
 }
-.pgp-pill:hover { border-color: #555; }
 
-/* Selected pill — matches Figma "Blue" with left accent border */
+/* Remove right border from last pills in each row to avoid double border */
+.pgp-pill:nth-child(2) {
+  border-right: none;
+}
+
+.pgp-pill:hover {
+  background: #f5f5f5;
+}
+
+/* Selected pill — black background, white text, blue left accent */
 .pgp-pill.is-sel {
-  border-color: #111;
-  color: #111;
-}
-.pgp-pill.is-sel:first-child {
-  border-left: 3px solid #1d4ed8;   /* blue left accent on first option */
+  background: #111;
+  color: #fff;
+  border-left: 3.5px solid #2563eb;  /* Figma blue accent */
+  padding-left: calc(16px - 3.5px);   /* Adjust padding to keep alignment */
 }
 
-/* ── SIZE DROPDOWN ── */
-.pgp-opt__select-wrap {
+/* ── CUSTOM SIZE DROPDOWN ── */
+.pgp-size-wrap {
   position: relative;
 }
 
-.pgp-select {
+.pgp-size-trigger {
   width: 100%;
   padding: 10px 38px 10px 13px;
   border: 1.5px solid #bbb;
@@ -460,21 +480,86 @@
   background: #fff;
   font-size: 0.82rem;
   color: #333;
-  appearance: none;
-  -webkit-appearance: none;
   cursor: pointer;
   transition: border-color 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 500;
 }
-.pgp-select:focus { outline: none; border-color: #111; }
 
-.pgp-opt__chevron {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
+.pgp-size-trigger:hover {
+  border-color: #555;
+}
+
+.pgp-size-trigger:focus {
+  outline: none;
+  border-color: #111;
+}
+
+.pgp-size-trigger__text {
+  flex: 1;
+  text-align: left;
+}
+
+.pgp-size-trigger__chevron {
   font-size: 0.7rem;
   color: #555;
+  margin-left: 10px;
+  transition: transform 0.2s ease;
+}
+
+/* Chevron rotates 180° when dropdown is open */
+.pgp-size-wrap.is-open .pgp-size-trigger__chevron {
+  transform: rotate(180deg);
+}
+
+/* Hidden list of size options */
+.pgp-size-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #bbb;
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+  display: none;
+  flex-direction: column;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.pgp-size-wrap.is-open .pgp-size-list {
+  display: flex;
+}
+
+.pgp-size-item {
+  padding: 10px 13px;
+  background: #fff;
+  border: none;
+  border-bottom: 1px solid #eee;
+  font-size: 0.82rem;
+  color: #333;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pgp-size-item:last-child {
+  border-bottom: none;
+}
+
+.pgp-size-item:hover {
+  background: #111;
+  color: #fff;
+}
+
+.pgp-size-item:active {
+  background: #111;
+  color: #fff;
 }
 
 /* ── ADD TO CART button ── */
@@ -531,432 +616,136 @@
   .pg         { padding: 28px 14px; }
   .pg__grid   { grid-template-columns: repeat(2, 1fr); gap: 3px; }
 
-  /* Stack popup vertically */
-  .pgp__box {
-    flex-direction: column;
-    width: 95%;
-    max-height: 90vh;
+  /* Mobile popup: bottom-sheet behavior */
+  .pgp {
+    align-items: flex-end;
+    justify-content: flex-start;
   }
+
+  .pgp__box {
+    width: 100%;
+    max-width: none;
+    border-radius: 14px 14px 0 0;  /* Rounded top only */
+    max-height: 80vh;
+    flex-direction: column;
+    transform: translateY(100%);    /* Start off-screen at bottom */
+    transition: transform 0.3s ease;
+  }
+
+  /* When open, slide up */
+  .pgp.is-open .pgp__box {
+    transform: translateY(0);
+  }
+
   .pgp__img-col {
     flex: none;
     height: 200px;
     min-height: unset;
-    border-radius: 6px 6px 0 0;
+    border-radius: 14px 14px 0 0;
   }
+
   .pgp__info { padding: 20px 16px 18px; }
+
+  /* Adjust close button on mobile */
+  .pgp__close {
+    top: 8px;
+    right: 8px;
+  }
 }
 
 </style>
 
 
 {%- comment -%} ============================================================
-    JAVASCRIPT — vanilla JS only, no jQuery
+    JAVASCRIPT — Sourced from external file
     ============================================================ {%- endcomment -%}
+<script src="{{ 'product-grid-popup.js' | asset_url }}"></script>
+
+{%- comment -%}
+  Separate script for hotspot drag positioning.
+  This handles the localStorage persistence and drag-to-reposition UX.
+{%- endcomment -%}
 <script>
 (function () {
   'use strict';
 
-  /* ──────────────────────────────────────────────────────────────
-     DOM REFERENCES
-  ────────────────────────────────────────────────────────────── */
-  const popup    = document.getElementById('pg-popup');
-  const backdrop = document.getElementById('pgp-bd');
-  const closeBtn = document.getElementById('pgp-close');
-  const popImg   = document.getElementById('pgp-img');
-  const popTitle = document.getElementById('pgp-title');
-  const popPrice = document.getElementById('pgp-price');
-  const popDesc  = document.getElementById('pgp-desc');
-  const controls = document.getElementById('pgp-controls');
-  const atcBtn   = document.getElementById('pgp-atc');
-  const atcLabel = atcBtn.querySelector('.pgp__atc-label');
-  const fb       = document.getElementById('pgp-fb');
-
-  /* ──────────────────────────────────────────────────────────────
-     SESSION STATE
-  ────────────────────────────────────────────────────────────── */
-  let allVariants  = [];   // full variant array for the open product
-  let selectedOpts = {};   // { "Color": "Blue", "Size": "M" }
-  let activeHandle = '';
-
-  /* ──────────────────────────────────────────────────────────────
-     OPEN POPUP
-  ────────────────────────────────────────────────────────────── */
-  function openPopup(btn) {
-
-    /* Reset UI state */
-    selectedOpts    = {};
-    fb.textContent  = '';
-    fb.classList.remove('is-err');
-    atcLabel.textContent = 'ADD TO CART';
-    atcBtn.disabled = false;
-
-    /* ── Static fields from data-attributes ── */
-    popImg.src          = btn.dataset.img;
-    popImg.alt          = btn.dataset.title;
-    popTitle.textContent = btn.dataset.title;
-    popPrice.textContent = btn.dataset.price;
-    popDesc.textContent  = btn.dataset.desc;
-    activeHandle         = btn.dataset.handle;
-
-    /* ── Parse variant data (Liquid HTML-escaped the JSON) ── */
-    allVariants = JSON.parse(htmlDecode(btn.dataset.variants));
-    const options = JSON.parse(htmlDecode(btn.dataset.options));
-
-    /* ── Build variant selector controls ── */
-    buildControls(options);
-
-    /* ── Show popup ── */
-    popup.setAttribute('aria-hidden', 'false');
-    popup.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-    closeBtn.focus();
-  }
-
-  /* ──────────────────────────────────────────────────────────────
-     CLOSE POPUP
-  ────────────────────────────────────────────────────────────── */
-  function closePopup() {
-    popup.classList.remove('is-open');
-    popup.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
-
-  /* ──────────────────────────────────────────────────────────────
-     BUILD VARIANT CONTROLS
-     Logic:
-       - "Size" option  → <select> dropdown (matching Figma)
-       - all other opts → pill buttons      (matching Figma)
-  ────────────────────────────────────────────────────────────── */
-  function buildControls(options) {
-    controls.innerHTML = '';
-
-    options.forEach(function (opt) {
-      const group = document.createElement('div');
-      group.className = 'pgp-opt';
-
-      /* Label */
-      const lbl       = document.createElement('span');
-      lbl.className   = 'pgp-opt__label';
-      lbl.textContent = opt.name;
-      group.appendChild(lbl);
-
-      if (opt.name.toLowerCase() === 'size') {
-        /* ── Dropdown ── */
-        group.appendChild(buildSizeDropdown(opt));
-      } else {
-        /* ── Pill buttons ── */
-        group.appendChild(buildPills(opt));
-      }
-
-      controls.appendChild(group);
-    });
-
-    /* Sync price with initial pre-selection */
-    syncVariant();
-  }
-
-  /* Build a <select> dropdown for Size */
-  function buildSizeDropdown(opt) {
-    const wrap      = document.createElement('div');
-    wrap.className  = 'pgp-opt__select-wrap';
-
-    const sel       = document.createElement('select');
-    sel.className   = 'pgp-select';
-    sel.dataset.opt = opt.name;
-
-    /* Placeholder */
-    const ph        = new Option('Choose your size', '', true, true);
-    ph.disabled     = true;
-    sel.appendChild(ph);
-
-    opt.values.forEach(function (val) {
-      sel.appendChild(new Option(val, val));
-    });
-
-    sel.addEventListener('change', function () {
-      selectedOpts[opt.name] = sel.value;
-      fb.textContent = '';
-      fb.classList.remove('is-err');
-      syncVariant();
-    });
-
-    /* Chevron icon */
-    const chev      = document.createElement('span');
-    chev.className  = 'pgp-opt__chevron';
-    chev.setAttribute('aria-hidden', 'true');
-    chev.textContent = '▾';
-
-    wrap.appendChild(sel);
-    wrap.appendChild(chev);
-    return wrap;
-  }
-
-  /* Build pill buttons for Color / other options */
-  function buildPills(opt) {
-    const row     = document.createElement('div');
-    row.className = 'pgp-opt__pills';
-
-    opt.values.forEach(function (val, idx) {
-      const pill           = document.createElement('button');
-      pill.type            = 'button';
-      pill.className       = 'pgp-pill';
-      pill.textContent     = val;
-      pill.dataset.opt     = opt.name;
-      pill.dataset.val     = val;
-
-      /* Pre-select first value */
-      if (idx === 0) {
-        pill.classList.add('is-sel');
-        selectedOpts[opt.name] = val;
-      }
-
-      pill.addEventListener('click', function () {
-        /* Toggle selected state within this group */
-        row.querySelectorAll('.pgp-pill').forEach(function (p) {
-          p.classList.remove('is-sel');
-        });
-        pill.classList.add('is-sel');
-        selectedOpts[opt.name] = val;
-        fb.textContent = '';
-        fb.classList.remove('is-err');
-        syncVariant();
-      });
-
-      row.appendChild(pill);
-    });
-
-    return row;
-  }
-
-  /* ──────────────────────────────────────────────────────────────
-     SYNC VARIANT
-     Match current selectedOpts to a variant; update price & ATC.
-  ────────────────────────────────────────────────────────────── */
-  function syncVariant() {
-    const match = findMatchingVariant();
-
-    if (match) {
-      popPrice.textContent    = formatMoney(match.price);
-      atcBtn.dataset.variantId = String(match.id);
-      atcBtn.disabled         = !match.available;
-      atcLabel.textContent    = match.available ? 'ADD TO CART' : 'SOLD OUT';
-    } else {
-      /* Partial selection — no exact match yet */
-      atcBtn.dataset.variantId = '';
-    }
-  }
-
-  /* Find the variant whose option values match all selectedOpts */
-  function findMatchingVariant() {
-    const optKeys = Object.keys(selectedOpts);
-    if (optKeys.length === 0) return null;
-
-    return allVariants.find(function (v) {
-      return optKeys.every(function (key, i) {
-        return v['option' + (i + 1)] === selectedOpts[key];
-      });
-    });
-  }
-
-  /* ──────────────────────────────────────────────────────────────
-     ADD TO CART
-     Uses Shopify AJAX Cart API — /cart/add.js
-  ────────────────────────────────────────────────────────────── */
-  atcBtn.addEventListener('click', async function () {
-    const variantId = parseInt(atcBtn.dataset.variantId, 10);
-
-    /* Guard: no variant matched yet */
-    if (!variantId) {
-      fb.textContent = 'Please select all options first.';
-      fb.classList.add('is-err');
-      return;
-    }
-
-    /* Disable while processing */
-    atcBtn.disabled       = true;
-    atcLabel.textContent  = 'Adding…';
-
-    try {
-      /* ── Build items array ── */
-      const items = [{ id: variantId, quantity: 1 }];
-
-      /* ── Special rule ──────────────────────────────────────────
-         If the selected variant has BOTH "Black" AND "Medium" as
-         option values, automatically add the "Soft Winter Jacket".
-      ─────────────────────────────────────────────────────────── */
-      const vals      = Object.values(selectedOpts);
-      const hasBlack  = vals.some(function (v) { return v.toLowerCase() === 'black';  });
-      const hasMedium = vals.some(function (v) { return v.toLowerCase() === 'medium'; });
-
-      if (hasBlack && hasMedium) {
-        const jacketId = await getFirstVariantId('soft-winter-jacket');
-        if (jacketId) items.push({ id: jacketId, quantity: 1 });
-      }
-
-      /* ── POST to Shopify ── */
-      const res = await fetch('/cart/add.js', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ items: items })
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.description || 'Could not add to cart.');
-      }
-
-      /* ── Success ── */
-      atcLabel.textContent = 'ADDED ✓';
-      fb.textContent       = hasBlack && hasMedium
-        ? 'Added to cart! Soft Winter Jacket also added.'
-        : 'Successfully added to cart!';
-      fb.classList.remove('is-err');
-
-      updateCartBubble();   /* refresh cart icon count in header */
-
-      /* Re-enable button after a short delay */
-      setTimeout(function () {
-        atcBtn.disabled      = false;
-        atcLabel.textContent = 'ADD TO CART';
-        fb.textContent       = '';
-      }, 2800);
-
-    } catch (err) {
-      fb.textContent = err.message || 'Something went wrong. Please try again.';
-      fb.classList.add('is-err');
-      atcBtn.disabled      = false;
-      atcLabel.textContent = 'ADD TO CART';
-    }
-  });
-
-  /* ──────────────────────────────────────────────────────────────
-     HELPERS
-  ────────────────────────────────────────────────────────────── */
+  const DRAG_THRESHOLD = 5; // px of movement before it's considered a drag
 
   /**
-   * Fetch the first available variant ID for a product by its handle.
-   * Used to auto-add "Soft Winter Jacket".
+   * Restore saved drag positions from localStorage for all hotspots.
+   * Key format: pg-dot-position-{blockId}
+   * Value: JSON { x: number, y: number } (percentages 0–100)
    */
-  async function getFirstVariantId(handle) {
-    try {
-      const r = await fetch('/products/' + handle + '.js');
-      if (!r.ok) return null;
-      const data = await r.json();
-      const v    = data.variants.find(function (x) { return x.available; })
-                   || data.variants[0];
-      return v ? v.id : null;
-    } catch { return null; }
-  }
-
-  /**
-   * Refresh Dawn theme's cart item count badge in the header.
-   * Targets common Dawn selectors without a page reload.
-   */
-  function updateCartBubble() {
-    fetch('/cart.js')
-      .then(function (r) { return r.json(); })
-      .then(function (cart) {
-        document.querySelectorAll(
-          '[data-cart-count], .cart-count, .js-cart-count, #CartCount'
-        ).forEach(function (el) {
-          el.textContent = cart.item_count;
-        });
-      })
-      .catch(function () {});
-  }
-
-  /**
-   * Decode HTML entities — needed because Liquid escapes JSON
-   * when outputting it into a data-attribute.
-   */
-  function htmlDecode(str) {
-    const txt   = document.createElement('textarea');
-    txt.innerHTML = str;
-    return txt.value;
-  }
-
-  /**
-   * Format a Shopify price integer (cents) to a display string.
-   * Falls back to a simple €-formatted string if Shopify.formatMoney
-   * is not available.
-   */
-  function formatMoney(cents) {
-    if (typeof Shopify !== 'undefined' && Shopify.formatMoney) {
-      return Shopify.formatMoney(cents, '{{ shop.money_format }}');
-    }
-    /* Simple Euro format fallback */
-    return (cents / 100)
-      .toFixed(2)
-      .replace('.', ',')
-      .replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '\u20AC';
-  }
-
-  /* ──────────────────────────────────────────────────────────────
-     HOTSPOT POSITIONING — restore saved drag positions from
-     localStorage so they survive page refreshes.
-     Key format:  pg-dot-position-{blockId}
-     Value:       JSON { x: number, y: number }  (percentages 0–100)
-  ────────────────────────────────────────────────────────────── */
   function restoreSavedPositions() {
     document.querySelectorAll('.pg__dot[data-block-id]').forEach(function (dot) {
-      var key   = 'pg-dot-position-' + dot.dataset.blockId;
+      var key = 'pg-dot-position-' + dot.dataset.blockId;
       var saved = null;
 
-      try { saved = JSON.parse(localStorage.getItem(key)); } catch (e) {}
+      try {
+        saved = JSON.parse(localStorage.getItem(key));
+      } catch (e) {
+        // Silently ignore parse errors
+      }
 
       if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
         applyPosition(dot, saved.x, saved.y);
       }
 
-      /* Tooltip hint */
+      // Add drag hint tooltip
       dot.setAttribute('data-drag-hint', 'drag to reposition');
     });
   }
 
-  /* Apply a percentage position to a dot (centers via CSS transform) */
+  /**
+   * Apply a percentage position to a hotspot (centers via CSS transform).
+   * Clamps values to keep dot fully inside the image (5–95%).
+   */
   function applyPosition(dot, xPct, yPct) {
-    /* Clamp to keep dot fully inside the image */
     xPct = Math.min(95, Math.max(5, xPct));
     yPct = Math.min(95, Math.max(5, yPct));
-    dot.style.left   = xPct + '%';
-    dot.style.top    = yPct + '%';
-    dot.style.right  = 'auto';
+    dot.style.left = xPct + '%';
+    dot.style.top = yPct + '%';
+    dot.style.right = 'auto';
     dot.style.bottom = 'auto';
-    dot.dataset.x    = xPct;
-    dot.dataset.y    = yPct;
+    dot.dataset.x = xPct;
+    dot.dataset.y = yPct;
   }
 
-  /* Save position to localStorage */
+  /**
+   * Save a hotspot position to localStorage.
+   */
   function savePosition(dot, xPct, yPct) {
     var key = 'pg-dot-position-' + dot.dataset.blockId;
-    try { localStorage.setItem(key, JSON.stringify({ x: xPct, y: yPct })); } catch (e) {}
+    try {
+      localStorage.setItem(key, JSON.stringify({ x: xPct, y: yPct }));
+    } catch (e) {
+      // Silently fail if localStorage is unavailable
+    }
   }
 
-  /* ──────────────────────────────────────────────────────────────
-     DRAG LOGIC
-     Uses Pointer Events API (mouse + touch + stylus in one).
-     Distinguishes a drag from a click via a movement threshold.
-  ────────────────────────────────────────────────────────────── */
-  var DRAG_THRESHOLD = 5;   /* px of movement before we consider it a drag */
-
+  /**
+   * Initialize drag-to-reposition for a hotspot button.
+   * Uses Pointer Events API (mouse + touch + stylus).
+   * Distinguishes a drag from a click via a movement threshold.
+   */
   function initDraggable(dot) {
-    var dragState = null;   /* null when idle */
+    var dragState = null;
 
     dot.addEventListener('pointerdown', function (e) {
-      /* Only primary button (left-click / touch) */
+      // Only primary button (left-click / touch)
       if (e.button !== 0 && e.pointerType === 'mouse') return;
 
       e.preventDefault();
       dot.setPointerCapture(e.pointerId);
 
-      var wrap   = dot.closest('.pg__img-wrap');
-      var rect   = wrap.getBoundingClientRect();
+      var wrap = dot.closest('.pg__img-wrap');
+      var rect = wrap.getBoundingClientRect();
 
       dragState = {
-        startX:    e.clientX,
-        startY:    e.clientY,
-        moved:     false,
-        wrapRect:  rect
+        startX: e.clientX,
+        startY: e.clientY,
+        moved: false,
+        wrapRect: rect
       };
     });
 
@@ -966,7 +755,7 @@
       var dx = e.clientX - dragState.startX;
       var dy = e.clientY - dragState.startY;
 
-      /* Upgrade to drag once threshold is exceeded */
+      // Upgrade to drag once threshold is exceeded
       if (!dragState.moved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
         dragState.moved = true;
         dot.classList.add('is-dragging');
@@ -974,10 +763,10 @@
 
       if (!dragState.moved) return;
 
-      /* Re-measure wrap rect in case page has scrolled */
-      var rect  = dot.closest('.pg__img-wrap').getBoundingClientRect();
-      var xPct  = ((e.clientX - rect.left) / rect.width)  * 100;
-      var yPct  = ((e.clientY - rect.top)  / rect.height) * 100;
+      // Re-measure wrap rect in case page has scrolled
+      var rect = dot.closest('.pg__img-wrap').getBoundingClientRect();
+      var xPct = ((e.clientX - rect.left) / rect.width) * 100;
+      var yPct = ((e.clientY - rect.top) / rect.height) * 100;
 
       applyPosition(dot, xPct, yPct);
     });
@@ -988,16 +777,14 @@
       dot.classList.remove('is-dragging');
 
       if (dragState.moved) {
-        /* ── Drag ended: save final position ── */
-        var rect  = dot.closest('.pg__img-wrap').getBoundingClientRect();
-        var xPct  = ((e.clientX - rect.left) / rect.width)  * 100;
-        var yPct  = ((e.clientY - rect.top)  / rect.height) * 100;
+        // Drag ended: save final position
+        var rect = dot.closest('.pg__img-wrap').getBoundingClientRect();
+        var xPct = ((e.clientX - rect.left) / rect.width) * 100;
+        var yPct = ((e.clientY - rect.top) / rect.height) * 100;
         applyPosition(dot, xPct, yPct);
         savePosition(dot, parseFloat(dot.dataset.x), parseFloat(dot.dataset.y));
-      } else {
-        /* ── No movement = regular click → open popup ── */
-        openPopup(dot);
       }
+      // If no movement, the click is handled by product-grid-popup.js
 
       dragState = null;
     });
@@ -1010,27 +797,13 @@
     });
   }
 
-  /* ──────────────────────────────────────────────────────────────
-     WIRE UP ALL HOTSPOT BUTTONS
-  ────────────────────────────────────────────────────────────── */
+  // Initialize drag for all hotspot buttons
   restoreSavedPositions();
-
   document.querySelectorAll('.pg__dot:not([disabled])').forEach(function (dot) {
     initDraggable(dot);
   });
 
-  /* Close triggers */
-  closeBtn.addEventListener('click', closePopup);
-  backdrop.addEventListener('click', closePopup);
-
-  /* Escape key */
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && popup.classList.contains('is-open')) {
-      closePopup();
-    }
-  });
-
-}());
+})();
 </script>
 
 
