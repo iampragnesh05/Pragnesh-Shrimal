@@ -6,6 +6,15 @@
                the Figma design: product image | name, price,
                description, color pills, size dropdown, ATC btn.
 
+  Hotspot positioning:
+    • Default X/Y set via range sliders in the Theme Customizer
+      (stored as percent values 0–100 in block settings).
+    • On the storefront the dot is DRAGGABLE — drag it anywhere
+      on the image; the new position is saved to localStorage
+      (keyed by block ID) and survives page refreshes.
+    • In the Customizer the position always reflects the schema
+      sliders so merchants can set a clean baseline.
+
   Special rule: variant Black + Medium → also add Soft Winter Jacket
   No jQuery — vanilla JS only.
   Author: Candidate
@@ -47,10 +56,19 @@
               Hotspot "+" button.
               All product data is embedded as data-* attributes so the
               popup JS can populate itself with zero extra XHR requests.
+              data-x / data-y hold the default position (%) from the
+              Customizer sliders; JS overrides them with any saved
+              drag position stored in localStorage.
             {%- endcomment -%}
+            {%- assign dot_x = block.settings.hotspot_x | default: 85 -%}
+            {%- assign dot_y = block.settings.hotspot_y | default: 80 -%}
             <button
               class="pg__dot"
               aria-label="Quick view {{ product.title | escape }}"
+              data-block-id="{{ block.id }}"
+              data-x="{{ dot_x }}"
+              data-y="{{ dot_y }}"
+              style="left:{{ dot_x }}%;top:{{ dot_y }}%;right:auto;bottom:auto;"
               data-title="{{ product.title | escape }}"
               data-price="{{ product.selected_or_first_available_variant.price | money }}"
               data-desc="{{ product.description | strip_html | escape | truncate: 280 }}"
@@ -193,14 +211,14 @@
 }
 
 /* ── "+" Hotspot button ──
-   Small white circle, pulsing shadow ring.
-   Positioned bottom-right by default (designer placed them
-   in various spots — kept consistent here for code simplicity).
+   Positioned via left/top percentage (set by Customizer sliders
+   or overridden by drag). Transform centers the dot on that point.
+   A pulsing ring animation draws the eye.
 ──────────────────────────────────────────────────────────── */
 .pg__dot {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
+  /* left & top set inline by Liquid / JS as percentages */
+  transform: translate(-50%, -50%);
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -210,7 +228,7 @@
   font-weight: 300;
   line-height: 1;
   color: #222;
-  cursor: pointer;
+  cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -219,13 +237,48 @@
   /* pulsing ring */
   animation: dot-pulse 2.6s ease-in-out infinite;
   transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  /* prevent text selection while dragging */
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;   /* needed for pointer events on touch */
 }
 
 .pg__dot:hover {
   background: #fff;
   border-color: #111;
-  transform: scale(1.2);
   animation: none;
+}
+
+/* While actively dragging */
+.pg__dot.is-dragging {
+  cursor: grabbing;
+  animation: none;
+  transform: translate(-50%, -50%) scale(1.25);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+/* Drag-mode tooltip shown above the dot */
+.pg__dot::before {
+  content: attr(data-drag-hint);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.72);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border-radius: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pg__dot:hover::before {
+  opacity: 1;
 }
 
 @keyframes dot-pulse {
@@ -839,10 +892,131 @@
   }
 
   /* ──────────────────────────────────────────────────────────────
-     WIRE UP ALL HOTSPOT BUTTONS on DOMContentLoaded
+     HOTSPOT POSITIONING — restore saved drag positions from
+     localStorage so they survive page refreshes.
+     Key format:  pg-dot-position-{blockId}
+     Value:       JSON { x: number, y: number }  (percentages 0–100)
   ────────────────────────────────────────────────────────────── */
-  document.querySelectorAll('.pg__dot:not([disabled])').forEach(function (btn) {
-    btn.addEventListener('click', function () { openPopup(btn); });
+  function restoreSavedPositions() {
+    document.querySelectorAll('.pg__dot[data-block-id]').forEach(function (dot) {
+      var key   = 'pg-dot-position-' + dot.dataset.blockId;
+      var saved = null;
+
+      try { saved = JSON.parse(localStorage.getItem(key)); } catch (e) {}
+
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+        applyPosition(dot, saved.x, saved.y);
+      }
+
+      /* Tooltip hint */
+      dot.setAttribute('data-drag-hint', 'drag to reposition');
+    });
+  }
+
+  /* Apply a percentage position to a dot (centers via CSS transform) */
+  function applyPosition(dot, xPct, yPct) {
+    /* Clamp to keep dot fully inside the image */
+    xPct = Math.min(95, Math.max(5, xPct));
+    yPct = Math.min(95, Math.max(5, yPct));
+    dot.style.left   = xPct + '%';
+    dot.style.top    = yPct + '%';
+    dot.style.right  = 'auto';
+    dot.style.bottom = 'auto';
+    dot.dataset.x    = xPct;
+    dot.dataset.y    = yPct;
+  }
+
+  /* Save position to localStorage */
+  function savePosition(dot, xPct, yPct) {
+    var key = 'pg-dot-position-' + dot.dataset.blockId;
+    try { localStorage.setItem(key, JSON.stringify({ x: xPct, y: yPct })); } catch (e) {}
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     DRAG LOGIC
+     Uses Pointer Events API (mouse + touch + stylus in one).
+     Distinguishes a drag from a click via a movement threshold.
+  ────────────────────────────────────────────────────────────── */
+  var DRAG_THRESHOLD = 5;   /* px of movement before we consider it a drag */
+
+  function initDraggable(dot) {
+    var dragState = null;   /* null when idle */
+
+    dot.addEventListener('pointerdown', function (e) {
+      /* Only primary button (left-click / touch) */
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+      e.preventDefault();
+      dot.setPointerCapture(e.pointerId);
+
+      var wrap   = dot.closest('.pg__img-wrap');
+      var rect   = wrap.getBoundingClientRect();
+
+      dragState = {
+        startX:    e.clientX,
+        startY:    e.clientY,
+        moved:     false,
+        wrapRect:  rect
+      };
+    });
+
+    dot.addEventListener('pointermove', function (e) {
+      if (!dragState) return;
+
+      var dx = e.clientX - dragState.startX;
+      var dy = e.clientY - dragState.startY;
+
+      /* Upgrade to drag once threshold is exceeded */
+      if (!dragState.moved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+        dragState.moved = true;
+        dot.classList.add('is-dragging');
+      }
+
+      if (!dragState.moved) return;
+
+      /* Re-measure wrap rect in case page has scrolled */
+      var rect  = dot.closest('.pg__img-wrap').getBoundingClientRect();
+      var xPct  = ((e.clientX - rect.left) / rect.width)  * 100;
+      var yPct  = ((e.clientY - rect.top)  / rect.height) * 100;
+
+      applyPosition(dot, xPct, yPct);
+    });
+
+    dot.addEventListener('pointerup', function (e) {
+      if (!dragState) return;
+
+      dot.classList.remove('is-dragging');
+
+      if (dragState.moved) {
+        /* ── Drag ended: save final position ── */
+        var rect  = dot.closest('.pg__img-wrap').getBoundingClientRect();
+        var xPct  = ((e.clientX - rect.left) / rect.width)  * 100;
+        var yPct  = ((e.clientY - rect.top)  / rect.height) * 100;
+        applyPosition(dot, xPct, yPct);
+        savePosition(dot, parseFloat(dot.dataset.x), parseFloat(dot.dataset.y));
+      } else {
+        /* ── No movement = regular click → open popup ── */
+        openPopup(dot);
+      }
+
+      dragState = null;
+    });
+
+    dot.addEventListener('pointercancel', function () {
+      if (dragState) {
+        dot.classList.remove('is-dragging');
+        dragState = null;
+      }
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     WIRE UP ALL HOTSPOT BUTTONS
+  ────────────────────────────────────────────────────────────── */
+  restoreSavedPositions();
+
+  document.querySelectorAll('.pg__dot:not([disabled])').forEach(function (dot) {
+    initDraggable(dot);
   });
 
   /* Close triggers */
@@ -886,6 +1060,34 @@
           "type": "product",
           "id": "product",
           "label": "Select Product"
+        },
+        {
+          "type": "header",
+          "content": "Hotspot Position (default)"
+        },
+        {
+          "type": "paragraph",
+          "content": "Sets the starting position of the + button. On the storefront you can also drag it anywhere on the image — the dragged position is saved automatically."
+        },
+        {
+          "type": "range",
+          "id": "hotspot_x",
+          "label": "Horizontal position (X %)",
+          "min": 5,
+          "max": 95,
+          "step": 1,
+          "default": 75,
+          "unit": "%"
+        },
+        {
+          "type": "range",
+          "id": "hotspot_y",
+          "label": "Vertical position (Y %)",
+          "min": 5,
+          "max": 95,
+          "step": 1,
+          "default": 75,
+          "unit": "%"
         }
       ]
     }
