@@ -24,6 +24,9 @@
         "topbar_btn_bg": "#f0d84a",
         "topbar_btn_color": "#111111",
         "hero_image": "shopify://shop_images/Group_1000008197.png",
+        "banner_height": 600,
+        "overlay_color": "#000000",
+        "overlay_opacity": 0,
         "heading": "The Gift Guide",
         "heading_color": "#111111",
         "subtext": "Discover Joy: Your Ultimate Holiday Gift Destination. Explore our curated selection and find the perfect gifts to delight your loved ones this holiday season.",
@@ -36,6 +39,71 @@
         "ticker_speed": 30,
         "ticker_bg": "#ffffff",
         "ticker_color": "#111111"
+      }
+    },
+    "custom_product_grid_V6cmBf": {
+      "type": "custom-product-grid",
+      "blocks": {
+        "product_bjiYJN": {
+          "type": "product",
+          "settings": {
+            "product": "black-leather-bag",
+            "hotspot_x": 62,
+            "hotspot_y": 59
+          }
+        },
+        "product_ita8TX": {
+          "type": "product",
+          "settings": {
+            "product": "blue-silk-tuxedo",
+            "hotspot_x": 87,
+            "hotspot_y": 53
+          }
+        },
+        "product_BPEc3V": {
+          "type": "product",
+          "settings": {
+            "product": "chequered-red-shirt",
+            "hotspot_x": 66,
+            "hotspot_y": 28
+          }
+        },
+        "product_TbcVd6": {
+          "type": "product",
+          "settings": {
+            "product": "classic-leather-jacket",
+            "hotspot_x": 76,
+            "hotspot_y": 25
+          }
+        },
+        "product_6dmc9g": {
+          "type": "product",
+          "settings": {
+            "product": "classic-varsity-top",
+            "hotspot_x": 53,
+            "hotspot_y": 30
+          }
+        },
+        "product_w9PYQg": {
+          "type": "product",
+          "settings": {
+            "product": "dark-denim-top",
+            "hotspot_x": 75,
+            "hotspot_y": 43
+          }
+        }
+      },
+      "block_order": [
+        "product_bjiYJN",
+        "product_ita8TX",
+        "product_BPEc3V",
+        "product_TbcVd6",
+        "product_6dmc9g",
+        "product_w9PYQg"
+      ],
+      "name": "Custom Product Grid",
+      "settings": {
+        "heading": "Tisso vison in the wild"
       }
     },
     "hero_jVaWmY": {
@@ -293,6 +361,7 @@
           ]
         }
       },
+      "disabled": true,
       "name": "Featured collection",
       "settings": {
         "collection": "all",
@@ -317,6 +386,7 @@
   },
   "order": [
     "custom_banner_mcA9xH",
+    "custom_product_grid_V6cmBf",
     "hero_jVaWmY",
     "product_list_fa6P9H"
   ]
