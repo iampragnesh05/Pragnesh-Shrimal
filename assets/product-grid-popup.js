@@ -277,34 +277,8 @@
   }
 
   /**
-   * Map color names to hex values for swatch display.
-   * Used to show actual color indicators in pills.
-   */
-  function getColorHex(colorName) {
-    const colorMap = {
-      'blue': '#2563eb',
-      'black': '#111111',
-      'white': '#ffffff',
-      'red': '#dc2626',
-      'green': '#16a34a',
-      'yellow': '#eab308',
-      'purple': '#9333ea',
-      'pink': '#ec4899',
-      'orange': '#ea580c',
-      'gray': '#6b7280',
-      'grey': '#6b7280',
-      'brown': '#92400e',
-      'navy': '#001f3f',
-      'cream': '#fffdd0',
-      'beige': '#f5f5dc'
-    };
-    return colorMap[colorName.toLowerCase()] || '#ddd';
-  }
-
-  /**
-   * Build a grid of color pills with color swatches.
+   * Build a grid of color pills.
    * Layout: grid 1fr 1fr for 2-column layout matching Figma.
-   * Each pill shows: [colored square swatch] [color name]
    * Wrapper has border around both pills.
    */
   function buildPills(opt) {
@@ -318,21 +292,9 @@
       const pill = document.createElement('button');
       pill.type = 'button';
       pill.className = 'pgp-pill';
+      pill.textContent = val;
       pill.dataset.opt = opt.name;
       pill.dataset.val = val;
-
-      // Add color swatch (small colored square)
-      const swatch = document.createElement('span');
-      swatch.className = 'pgp-pill__swatch';
-      swatch.style.backgroundColor = getColorHex(val);
-      swatch.setAttribute('aria-hidden', 'true');
-      pill.appendChild(swatch);
-
-      // Add color name text
-      const text = document.createElement('span');
-      text.className = 'pgp-pill__text';
-      text.textContent = val;
-      pill.appendChild(text);
 
       // Pre-select first pill
       if (idx === 0) {
