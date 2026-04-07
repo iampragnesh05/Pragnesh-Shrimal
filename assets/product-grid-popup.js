@@ -44,6 +44,7 @@
   let selectedOpts = {}; // { "Color": "Blue", "Size": "M" }
   let activeHandle = ''; // product handle for special rule lookup
   let closingPopupFocus = null; // element to restore focus to when closing
+  let optionMap = {}; // maps option name to its position (e.g., { "Size": 1, "Color": 2 })
 
   /* =========================================================================
      HELPERS
@@ -265,6 +266,14 @@
 
   function buildControls(options) {
     console.log('🛠️ Building controls for options:', options);
+    
+    // Build optionMap: maps option name to its position in variants
+    // Example: if "Size" is the first option, optionMap.Size = 1
+    optionMap = {};
+    options.forEach(function (opt, idx) {
+      optionMap[opt.name] = idx + 1;  // option1, option2, option3 are 1-indexed
+    });
+    console.log('🗺️ Option Map:', optionMap);
     
     controls.innerHTML = '';
 
@@ -509,18 +518,21 @@
 
   /**
    * Find variant by matching all selectedOpts to variant option1/option2/option3.
+   * Uses optionMap to determine which position each option name is at.
    */
   function findMatchingVariant() {
     const optKeys = Object.keys(selectedOpts);
     if (optKeys.length === 0) return null;
 
     console.log('🔍 Finding variant. Selected options:', optKeys, selectedOpts);
+    console.log('   Using optionMap:', optionMap);
 
     const match = allVariants.find(function (v) {
-      const matches = optKeys.every(function (key, i) {
-        const optionKey = 'option' + (i + 1);
+      const matches = optKeys.every(function (optName) {
+        const position = optionMap[optName];  // Get position (1, 2, or 3)
+        const optionKey = 'option' + position;
         const variantValue = v[optionKey];
-        const selectedValue = selectedOpts[key];
+        const selectedValue = selectedOpts[optName];
         
         console.log(`  Comparing ${optionKey}: "${variantValue}" === "${selectedValue}" ? ${variantValue === selectedValue}`);
         
