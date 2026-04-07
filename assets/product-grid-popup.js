@@ -45,6 +45,8 @@
   let activeHandle = ''; // product handle for special rule lookup
   let closingPopupFocus = null; // element to restore focus to when closing
   let optionMap = {}; // maps option name to its position (e.g., { "Size": 1, "Color": 2 })
+  const BONUS_JACKET_HANDLE = 'soft-winter-jacket';
+  const BONUS_JACKET_TITLE = 'Soft Winter Jacket';
 
   /* =========================================================================
      HELPERS
@@ -91,6 +93,44 @@
       return variant ? variant.id : null;
     } catch (err) {
       console.warn('Failed to fetch variant for ' + handle, err);
+      return null;
+    }
+  }
+
+  /**
+   * Fallback: find a product by title via predictive search
+   * and return its first available variant id.
+   * Useful when the product handle is different from expectation.
+   */
+  async function getFirstVariantIdByTitle(title) {
+    try {
+      const searchUrl =
+        '/search/suggest.json?q=' +
+        encodeURIComponent(title) +
+        '&resources[type]=product&resources[limit]=10&section_id=predictive-search';
+      const searchRes = await fetch(searchUrl);
+      if (!searchRes.ok) return null;
+      const searchData = await searchRes.json();
+      const products =
+        searchData &&
+        searchData.resources &&
+        searchData.resources.results &&
+        searchData.resources.results.products
+          ? searchData.resources.results.products
+          : [];
+
+      if (!products.length) return null;
+
+      const normalizedTarget = title.trim().toLowerCase();
+      const exactMatch = products.find(function (p) {
+        return String(p.title || '').trim().toLowerCase() === normalizedTarget;
+      });
+      const firstMatch = exactMatch || products[0];
+      if (!firstMatch || !firstMatch.handle) return null;
+
+      return await getFirstVariantId(firstMatch.handle);
+    } catch (err) {
+      console.warn('Failed predictive search lookup for ' + title, err);
       return null;
     }
   }
@@ -575,24 +615,34 @@
       // If selected variant has BOTH "Black" AND "Medium",
       // also add the "Soft Winter Jacket" first available variant.
       // ──────────────────────────────────────────────────────────
-      const vals = Object.values(selectedOpts);
-      const hasBlack = vals.some(function (v) {
-        return v.toLowerCase() === 'black';
+      const selectedColor = Object.keys(selectedOpts).find(function (key) {
+        return key.toLowerCase() === 'color';
       });
-      const hasMedium = vals.some(function (v) {
-        return v.toLowerCase() === 'medium';
+      const selectedSize = Object.keys(selectedOpts).find(function (key) {
+        return key.toLowerCase() === 'size';
       });
+
+      const colorValue = selectedColor ? String(selectedOpts[selectedColor]).toLowerCase() : '';
+      const sizeValue = selectedSize ? String(selectedOpts[selectedSize]).toLowerCase() : '';
+
+      const hasBlack = colorValue === 'black';
+      const hasMedium = sizeValue === 'medium' || sizeValue === 'm';
 
       console.log('📋 ATC Details:', { variantId, selectedOpts, hasBlack, hasMedium });
 
       let jacketMessage = '';
-      if (hasBlack && hasMedium) {
+      if (hasBlack && hasMedium && activeHandle !== BONUS_JACKET_HANDLE) {
         console.log('🎁 Black+Medium detected. Fetching Soft Winter Jacket...');
-        const jacketId = await getFirstVariantId('soft-winter-jacket');
+        let jacketId = await getFirstVariantId(BONUS_JACKET_HANDLE);
+        if (!jacketId) {
+          jacketId = await getFirstVariantIdByTitle(BONUS_JACKET_TITLE);
+        }
         if (jacketId) {
           items.push({ id: jacketId, quantity: 1 });
           jacketMessage = ' Soft Winter Jacket also added.';
           console.log('✅ Jacket variant added:', jacketId);
+        } else {
+          console.warn('⚠️ Could not resolve Soft Winter Jacket variant id.');
         }
       }
 
