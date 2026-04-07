@@ -302,6 +302,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.28s ease;
+  padding: 20px;  /* Padding for mobile safety */
 }
 
 .pgp.is-open {
@@ -321,20 +322,20 @@
   position: relative;
   background: #fff;
   border-radius: 6px;
-  width: 92%;
-  max-width: 490px;   /* matches Figma card proportions */
+  width: 100%;
+  max-width: 520px;
   max-height: 92vh;
   overflow-y: auto;
   display: flex;
   flex-direction: row;
   z-index: 1;
-  transform: translateY(16px) scale(0.98);
+  transform: scale(0.98);
   transition: transform 0.28s ease;
   box-shadow: 0 20px 60px rgba(0,0,0,0.22);
 }
 
 .pgp.is-open .pgp__box {
-  transform: translateY(0) scale(1);
+  transform: scale(1);
 }
 
 /* ── × close ── */
@@ -617,32 +618,29 @@
   .pg         { padding: 28px 14px; }
   .pg__grid   { grid-template-columns: repeat(2, 1fr); gap: 3px; }
 
-  /* Mobile popup: bottom-sheet behavior */
+  /* Mobile popup: centered and full width */
   .pgp {
-    align-items: flex-end;
-    justify-content: flex-start;
+    padding: 16px;
   }
 
   .pgp__box {
     width: 100%;
     max-width: none;
-    border-radius: 14px 14px 0 0;  /* Rounded top only */
-    max-height: 80vh;
+    border-radius: 8px;
+    max-height: 85vh;
     flex-direction: column;
-    transform: translateY(100%);    /* Start off-screen at bottom */
-    transition: transform 0.3s ease;
+    transform: scale(0.95);
   }
 
-  /* When open, slide up */
   .pgp.is-open .pgp__box {
-    transform: translateY(0);
+    transform: scale(1);
   }
 
   .pgp__img-col {
     flex: none;
-    height: 200px;
+    height: 220px;
     min-height: unset;
-    border-radius: 14px 14px 0 0;
+    border-radius: 8px 8px 0 0;
   }
 
   .pgp__info { padding: 20px 16px 18px; }
