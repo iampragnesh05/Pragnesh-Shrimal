@@ -88,6 +88,7 @@
     width: 100%;
     min-height: {{ section.settings.banner_height }}px;
     overflow: hidden;
+    margin: 0;
   }
 
   /* Full-width background image */
@@ -203,41 +204,27 @@
     transform: translateX(6px);
   }
 
-  /* ── TICKER / MARQUEE ── */
-  .custom-banner__ticker {
-    background: {{ section.settings.ticker_bg }};
-    color: {{ section.settings.ticker_color }};
-    padding: 12px 0;
-    overflow: hidden;
-    white-space: nowrap;
-    border-top: 1px solid #e0e0e0;
+  /* ── STATIC ANNOUNCEMENT STRIP (below hero) ── */
+  .custom-banner__announcement-strip {
+    width: 100%;
+    margin: 0;
+    padding: 12px 20px;
+    box-sizing: border-box;
+    background: {{ section.settings.announcement_bar_bg }};
+    color: {{ section.settings.announcement_bar_color }};
+    text-align: center;
   }
 
-  .custom-banner__ticker-inner {
-    display: inline-flex;
-    animation: marquee {{ section.settings.ticker_speed }}s linear infinite;
-  }
-
-  .custom-banner__ticker-inner:hover {
-    animation-play-state: paused;
-  }
-
-  .custom-banner__ticker-text {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 2px;
+  .custom-banner__announcement-strip-text {
+    margin: 0;
+    max-width: 100%;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.75px;
     text-transform: uppercase;
-    padding: 0 60px;
-  }
-
-  .custom-banner__ticker-separator {
-    padding: 0 10px;
-    opacity: 0.4;
-  }
-
-  @keyframes marquee {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   /* ── RESPONSIVE ── */
@@ -268,6 +255,15 @@
     .custom-banner__heading {
       font-size: 32px;
     }
+
+    .custom-banner__announcement-strip {
+      padding: 8px 16px;
+    }
+
+    .custom-banner__announcement-strip-text {
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
   }
 </style>
 
@@ -280,7 +276,7 @@
     </a>
 
     <p class="custom-banner__announcement">
-      {{ section.settings.announcement_text }}
+      {{ section.settings.topbar_announcement_text }}
     </p>
 
     <a href="{{ section.settings.topbar_btn_link }}" class="custom-banner__topbar-btn">
@@ -321,15 +317,9 @@
 
   </div>
 
-  <!-- TICKER -->
-  <div class="custom-banner__ticker">
-    <div class="custom-banner__ticker-inner">
-      {% assign ticker_repeats = "1,2,3,4,5,6,7,8" | split: "," %}
-      {% for i in ticker_repeats %}
-        <span class="custom-banner__ticker-text">{{ section.settings.ticker_text }}</span>
-        <span class="custom-banner__ticker-separator">✦</span>
-      {% endfor %}
-    </div>
+  <!-- STATIC ANNOUNCEMENT BAR -->
+  <div class="custom-banner__announcement-strip">
+    <p class="custom-banner__announcement-strip-text">{{ section.settings.announcement_text }}</p>
   </div>
 
 </section>
@@ -375,12 +365,12 @@
 
     {
       "type": "header",
-      "content": "📢 Announcement Bar"
+      "content": "📢 Top bar announcement"
     },
     {
       "type": "text",
-      "id": "announcement_text",
-      "label": "Announcement Text",
+      "id": "topbar_announcement_text",
+      "label": "Top Bar Announcement Text",
       "default": "Find the ideal gift for your loved ones."
     },
     {
@@ -511,34 +501,25 @@
 
     {
       "type": "header",
-      "content": "📜 Ticker / Marquee Bar"
+      "content": "📢 Announcement Bar (below hero)"
     },
     {
       "type": "text",
-      "id": "ticker_text",
-      "label": "Ticker Text",
+      "id": "announcement_text",
+      "label": "Announcement text",
       "default": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL"
     },
     {
-      "type": "range",
-      "id": "ticker_speed",
-      "label": "Ticker Speed (seconds)",
-      "min": 10,
-      "max": 60,
-      "step": 5,
-      "default": 30
-    },
-    {
       "type": "color",
-      "id": "ticker_bg",
-      "label": "Ticker Background",
+      "id": "announcement_bar_bg",
+      "label": "Background",
       "default": "#ffffff"
     },
     {
       "type": "color",
-      "id": "ticker_color",
-      "label": "Ticker Text Color",
-      "default": "#111111"
+      "id": "announcement_bar_color",
+      "label": "Text color",
+      "default": "#333333"
     }
 
   ],
