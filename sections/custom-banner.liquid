@@ -91,6 +91,78 @@
     display: contents;
   }
 
+  /* Breadcrumb + “Choose a Gift” under top bar */
+  .custom-banner__subnav {
+    padding: 10px 32px 14px;
+    margin: 0;
+    border-bottom: 1px solid #e0e0e0;
+    background: {{ section.settings.background_color }};
+    position: relative;
+    z-index: 10;
+  }
+
+  .custom-banner__breadcrumb {
+    margin: 0;
+  }
+
+  .custom-banner__breadcrumb-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #666666;
+  }
+
+  .custom-banner__breadcrumb-list a {
+    color: #111111;
+    text-decoration: none;
+  }
+
+  .custom-banner__breadcrumb-list a:hover {
+    text-decoration: underline;
+  }
+
+  .custom-banner__breadcrumb-sep {
+    color: #999999;
+    user-select: none;
+  }
+
+  .custom-banner__breadcrumb-current {
+    color: #555555;
+  }
+
+  .custom-banner__gift-under-bc {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: {{ section.settings.topbar_btn_bg }};
+    color: {{ section.settings.topbar_btn_color }};
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .custom-banner__gift-under-bc:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  }
+
+  .custom-banner__gift-under-bc .btn-arrow {
+    display: inline-block;
+  }
+
   /* ── HERO: FULL WIDTH IMAGE WITH OVERLAY TEXT ── */
   .custom-banner__hero {
     position: relative;
@@ -391,6 +463,16 @@
       font-size: 12px;
       letter-spacing: 0.5px;
     }
+
+    .custom-banner__subnav {
+      padding: 10px 14px 12px;
+    }
+
+    .custom-banner__gift-under-bc {
+      margin-top: 10px;
+      padding: 9px 16px;
+      font-size: 11px;
+    }
   }
 </style>
 
@@ -424,6 +506,90 @@
       </a>
     </div>
   </div>
+
+  {%- liquid
+    assign gift_link = section.settings.below_breadcrumb_gift_link
+    if gift_link == blank
+      assign gift_link = section.settings.topbar_btn_link
+    endif
+    assign show_bc = section.settings.show_breadcrumb_under_topbar
+    assign has_crumbs = false
+    if template.name == 'collection' and collection
+      assign has_crumbs = true
+    elsif template.name == 'product' and product
+      assign has_crumbs = true
+    elsif template.name == 'page' and page
+      assign has_crumbs = true
+    elsif template.name == 'article' and article
+      assign has_crumbs = true
+    elsif template.name == 'blog' and blog
+      assign has_crumbs = true
+    endif
+    assign show_subnav_row = false
+    if gift_link != blank
+      assign show_subnav_row = true
+    endif
+    if show_bc and has_crumbs
+      assign show_subnav_row = true
+    endif
+  -%}
+  {% if show_subnav_row %}
+    <div class="custom-banner__subnav">
+      {% if show_bc and has_crumbs %}
+        <nav class="custom-banner__breadcrumb" aria-label="Breadcrumb">
+          <ol class="custom-banner__breadcrumb-list">
+            <li>
+              <a href="{{ routes.root_url }}">Home</a>
+            </li>
+            {% if template.name == 'collection' and collection %}
+              <li>
+                <span class="custom-banner__breadcrumb-sep" aria-hidden="true">/</span>
+                <span class="custom-banner__breadcrumb-current">{{ collection.title }}</span>
+              </li>
+            {% elsif template.name == 'product' and product %}
+              {% if product.collections.first %}
+                <li>
+                  <span class="custom-banner__breadcrumb-sep" aria-hidden="true">/</span>
+                  <a href="{{ product.collections.first.url }}">{{ product.collections.first.title }}</a>
+                </li>
+              {% endif %}
+              <li>
+                <span class="custom-banner__breadcrumb-sep" aria-hidden="true">/</span>
+                <span class="custom-banner__breadcrumb-current">{{ product.title }}</span>
+              </li>
+            {% elsif template.name == 'page' and page %}
+              <li>
+                <span class="custom-banner__breadcrumb-sep" aria-hidden="true">/</span>
+                <span class="custom-banner__breadcrumb-current">{{ page.title }}</span>
+              </li>
+            {% elsif template.name == 'article' and article %}
+              {% if blog %}
+                <li>
+                  <span class="custom-banner__breadcrumb-sep" aria-hidden="true">/</span>
+                  <a href="{{ blog.url }}">{{ blog.title }}</a>
+                </li>
+              {% endif %}
+              <li>
+                <span class="custom-banner__breadcrumb-sep" aria-hidden="true">/</span>
+                <span class="custom-banner__breadcrumb-current">{{ article.title }}</span>
+              </li>
+            {% elsif template.name == 'blog' and blog %}
+              <li>
+                <span class="custom-banner__breadcrumb-sep" aria-hidden="true">/</span>
+                <span class="custom-banner__breadcrumb-current">{{ blog.title }}</span>
+              </li>
+            {% endif %}
+          </ol>
+        </nav>
+      {% endif %}
+      {% if gift_link != blank %}
+        <a href="{{ gift_link }}" class="custom-banner__gift-under-bc">
+          <span>{{ section.settings.below_breadcrumb_gift_label }}</span>
+          <span class="btn-arrow">→</span>
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
 
   <!-- HERO: FULL WIDTH IMAGE + OVERLAY TEXT -->
   <div class="custom-banner__hero">
@@ -563,6 +729,30 @@
       "id": "topbar_btn_color",
       "label": "Button Text Color",
       "default": "#111111"
+    },
+
+    {
+      "type": "header",
+      "content": "🧭 Below top bar (breadcrumb + gift CTA)"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_breadcrumb_under_topbar",
+      "label": "Show breadcrumb trail",
+      "default": true,
+      "info": "Home and current collection, product, page, blog, or article when available."
+    },
+    {
+      "type": "text",
+      "id": "below_breadcrumb_gift_label",
+      "label": "Gift button label",
+      "default": "Choose a Gift"
+    },
+    {
+      "type": "url",
+      "id": "below_breadcrumb_gift_link",
+      "label": "Gift button link (optional)",
+      "info": "If empty, uses the Top Bar Button link."
     },
 
     {
