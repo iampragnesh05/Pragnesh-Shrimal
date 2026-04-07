@@ -1,0 +1,907 @@
+{% comment %}
+  ============================================================
+  Section: Custom Product Grid
+  Description: 3×2 photo grid. Each image has a small circular
+               "+" hotspot. Clicking it opens a popup matching
+               the Figma design: product image | name, price,
+               description, color pills, size dropdown, ATC btn.
+
+  Special rule: variant Black + Medium → also add Soft Winter Jacket
+  No jQuery — vanilla JS only.
+  Author: Candidate
+  ============================================================
+{% endcomment %}
+
+<section class="pg" id="pg-section" aria-label="Product Grid">
+
+  {% if section.settings.heading != blank %}
+    <h2 class="pg__heading">{{ section.settings.heading }}</h2>
+  {% endif %}
+
+  <div class="pg__grid">
+    {% for block in section.blocks %}
+      {%- assign product = block.settings.product -%}
+
+      <div class="pg__cell" {{ block.shopify_attributes }}>
+
+        {% if product != blank %}
+
+          <div class="pg__img-wrap">
+
+            {% if product.featured_image %}
+              <img
+                class="pg__img"
+                src="{{ product.featured_image | img_url: '600x600', crop: 'center' }}"
+                alt="{{ product.featured_image.alt | escape | default: product.title }}"
+                loading="lazy"
+                width="600"
+                height="600"
+              >
+            {% else %}
+              <div class="pg__img pg__img--ph">
+                {{ 'product-1' | placeholder_svg_tag: 'ph-svg' }}
+              </div>
+            {% endif %}
+
+            {%- comment -%}
+              Hotspot "+" button.
+              All product data is embedded as data-* attributes so the
+              popup JS can populate itself with zero extra XHR requests.
+            {%- endcomment -%}
+            <button
+              class="pg__dot"
+              aria-label="Quick view {{ product.title | escape }}"
+              data-title="{{ product.title | escape }}"
+              data-price="{{ product.selected_or_first_available_variant.price | money }}"
+              data-desc="{{ product.description | strip_html | escape | truncate: 280 }}"
+              data-img="{{ product.featured_image | img_url: '600x600', crop: 'center' }}"
+              data-handle="{{ product.handle }}"
+              data-variants="{{ product.variants | json | escape }}"
+              data-options="{{ product.options_with_values | json | escape }}"
+            >+</button>
+
+          </div>
+
+        {% else %}
+          {%- comment -%} Empty slot — visible only inside the editor {%- endcomment -%}
+          <div class="pg__img-wrap">
+            <div class="pg__img pg__img--ph">
+              {{ 'product-1' | placeholder_svg_tag: 'ph-svg' }}
+            </div>
+            <button class="pg__dot" disabled aria-hidden="true">+</button>
+          </div>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+  </div>
+
+</section>
+
+
+{%- comment -%} ============================================================
+    POPUP MODAL — one shared instance, populated dynamically by JS
+    ============================================================ {%- endcomment -%}
+<div
+  id="pg-popup"
+  class="pgp"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="pgp-title"
+  aria-hidden="true"
+>
+  {%- comment -%} Backdrop — click to close {%- endcomment -%}
+  <div class="pgp__bd" id="pgp-bd"></div>
+
+  <div class="pgp__box">
+
+    {%- comment -%} × close button {%- endcomment -%}
+    <button class="pgp__close" id="pgp-close" aria-label="Close popup">&#x2715;</button>
+
+    {%- comment -%} Left — product image {%- endcomment -%}
+    <div class="pgp__img-col">
+      <img id="pgp-img" src="" alt="" class="pgp__img">
+    </div>
+
+    {%- comment -%} Right — product details {%- endcomment -%}
+    <div class="pgp__info">
+
+      <h2 class="pgp__title" id="pgp-title"></h2>
+      <p  class="pgp__price" id="pgp-price"></p>
+      <p  class="pgp__desc"  id="pgp-desc"></p>
+
+      {%- comment -%} Variant selectors rendered by JS {%- endcomment -%}
+      <div id="pgp-controls" class="pgp__controls"></div>
+
+      {%- comment -%} ADD TO CART button {%- endcomment -%}
+      <button id="pgp-atc" class="pgp__atc" type="button">
+        <span class="pgp__atc-label">ADD TO CART</span>
+        <span class="pgp__atc-arrow" aria-hidden="true">&#x2192;</span>
+      </button>
+
+      {%- comment -%} Inline status / error message {%- endcomment -%}
+      <p id="pgp-fb" class="pgp__fb" aria-live="polite"></p>
+
+    </div>
+  </div>
+</div>
+
+
+{%- comment -%} ============================================================
+    STYLES — scoped to this section
+    ============================================================ {%- endcomment -%}
+<style>
+
+/* ================================================================
+   PRODUCT GRID
+   ================================================================ */
+
+.pg {
+  padding: 48px 40px;
+  background: #fff;
+}
+
+.pg__heading {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: #111;
+  margin: 0 0 20px 0;
+  letter-spacing: 0.01em;
+}
+
+/* 3 equal columns, tight gap to match Figma screenshot */
+.pg__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  max-width: 1200px;
+}
+
+/* ── Grid cell ── */
+.pg__cell {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background: #ddd;
+}
+
+/* ── Image wrapper (relative so hotspot sits inside) ── */
+.pg__img-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Product image ── */
+.pg__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s ease;
+}
+.pg__cell:hover .pg__img {
+  transform: scale(1.04);
+}
+
+/* Placeholder when no image assigned */
+.pg__img--ph {
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── "+" Hotspot button ──
+   Small white circle, pulsing shadow ring.
+   Positioned bottom-right by default (designer placed them
+   in various spots — kept consistent here for code simplicity).
+──────────────────────────────────────────────────────────── */
+.pg__dot {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(0, 0, 0, 0.22);
+  font-size: 1.25rem;
+  font-weight: 300;
+  line-height: 1;
+  color: #222;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 3;
+  /* pulsing ring */
+  animation: dot-pulse 2.6s ease-in-out infinite;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.pg__dot:hover {
+  background: #fff;
+  border-color: #111;
+  transform: scale(1.2);
+  animation: none;
+}
+
+@keyframes dot-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(0,0,0,0.4);  }
+  60%  { box-shadow: 0 0 0 10px rgba(0,0,0,0);   }
+  100% { box-shadow: 0 0 0 0   rgba(0,0,0,0);    }
+}
+
+
+/* ================================================================
+   POPUP OVERLAY
+   ================================================================ */
+
+.pgp {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.pgp.is-open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── Translucent backdrop ── */
+.pgp__bd {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+}
+
+/* ── Dialog card ── */
+.pgp__box {
+  position: relative;
+  background: #fff;
+  border-radius: 6px;
+  width: 92%;
+  max-width: 490px;   /* matches Figma card proportions */
+  max-height: 92vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: row;
+  z-index: 1;
+  transform: translateY(16px) scale(0.98);
+  transition: transform 0.28s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+}
+
+.pgp.is-open .pgp__box {
+  transform: translateY(0) scale(1);
+}
+
+/* ── × close ── */
+.pgp__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  color: #444;
+  padding: 4px 6px;
+  line-height: 1;
+  z-index: 2;
+  transition: color 0.15s;
+}
+.pgp__close:hover { color: #000; }
+
+/* ── Left: image column ── */
+.pgp__img-col {
+  flex: 0 0 42%;
+  overflow: hidden;
+  border-radius: 6px 0 0 6px;
+  min-height: 300px;
+}
+
+.pgp__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Right: info column ── */
+.pgp__info {
+  flex: 1;
+  padding: 30px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pgp__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+  padding-right: 26px;
+  line-height: 1.3;
+}
+
+.pgp__price {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #111;
+  margin: 0;
+}
+
+.pgp__desc {
+  font-size: 0.8rem;
+  line-height: 1.65;
+  color: #555;
+  margin: 0;
+}
+
+/* ── Variant controls ── */
+.pgp__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+/* Option group label (e.g. "Color", "Size") */
+.pgp-opt__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.03em;
+  margin-bottom: 7px;
+  display: block;
+}
+
+/* ── COLOR PILLS (matching Figma's pill row) ── */
+.pgp-opt__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pgp-pill {
+  padding: 8px 20px;
+  border: 1.5px solid #bbb;
+  background: #fff;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  color: #333;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.pgp-pill:hover { border-color: #555; }
+
+/* Selected pill — matches Figma "Blue" with left accent border */
+.pgp-pill.is-sel {
+  border-color: #111;
+  color: #111;
+}
+.pgp-pill.is-sel:first-child {
+  border-left: 3px solid #1d4ed8;   /* blue left accent on first option */
+}
+
+/* ── SIZE DROPDOWN ── */
+.pgp-opt__select-wrap {
+  position: relative;
+}
+
+.pgp-select {
+  width: 100%;
+  padding: 10px 38px 10px 13px;
+  border: 1.5px solid #bbb;
+  border-radius: 3px;
+  background: #fff;
+  font-size: 0.82rem;
+  color: #333;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.18s;
+}
+.pgp-select:focus { outline: none; border-color: #111; }
+
+.pgp-opt__chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 0.7rem;
+  color: #555;
+}
+
+/* ── ADD TO CART button ── */
+.pgp__atc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 14px 18px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.18s;
+}
+.pgp__atc:hover { background: #333; transform: translateY(-2px); }
+.pgp__atc:active { transform: translateY(0); }
+.pgp__atc:disabled { background: #999; cursor: not-allowed; transform: none; }
+
+.pgp__atc-arrow {
+  font-size: 1rem;
+  transition: transform 0.2s;
+}
+.pgp__atc:hover .pgp__atc-arrow { transform: translateX(5px); }
+
+/* ── Status message ── */
+.pgp__fb {
+  font-size: 0.76rem;
+  min-height: 1em;
+  margin: 0;
+  color: #2a7a2a;
+  font-weight: 600;
+}
+.pgp__fb.is-err { color: #c0392b; }
+
+
+/* ================================================================
+   RESPONSIVE — tablet ≤ 900px
+   ================================================================ */
+@media (max-width: 900px) {
+  .pg__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ================================================================
+   RESPONSIVE — mobile ≤ 600px
+   ================================================================ */
+@media (max-width: 600px) {
+  .pg         { padding: 28px 14px; }
+  .pg__grid   { grid-template-columns: repeat(2, 1fr); gap: 3px; }
+
+  /* Stack popup vertically */
+  .pgp__box {
+    flex-direction: column;
+    width: 95%;
+    max-height: 90vh;
+  }
+  .pgp__img-col {
+    flex: none;
+    height: 200px;
+    min-height: unset;
+    border-radius: 6px 6px 0 0;
+  }
+  .pgp__info { padding: 20px 16px 18px; }
+}
+
+</style>
+
+
+{%- comment -%} ============================================================
+    JAVASCRIPT — vanilla JS only, no jQuery
+    ============================================================ {%- endcomment -%}
+<script>
+(function () {
+  'use strict';
+
+  /* ──────────────────────────────────────────────────────────────
+     DOM REFERENCES
+  ────────────────────────────────────────────────────────────── */
+  const popup    = document.getElementById('pg-popup');
+  const backdrop = document.getElementById('pgp-bd');
+  const closeBtn = document.getElementById('pgp-close');
+  const popImg   = document.getElementById('pgp-img');
+  const popTitle = document.getElementById('pgp-title');
+  const popPrice = document.getElementById('pgp-price');
+  const popDesc  = document.getElementById('pgp-desc');
+  const controls = document.getElementById('pgp-controls');
+  const atcBtn   = document.getElementById('pgp-atc');
+  const atcLabel = atcBtn.querySelector('.pgp__atc-label');
+  const fb       = document.getElementById('pgp-fb');
+
+  /* ──────────────────────────────────────────────────────────────
+     SESSION STATE
+  ────────────────────────────────────────────────────────────── */
+  let allVariants  = [];   // full variant array for the open product
+  let selectedOpts = {};   // { "Color": "Blue", "Size": "M" }
+  let activeHandle = '';
+
+  /* ──────────────────────────────────────────────────────────────
+     OPEN POPUP
+  ────────────────────────────────────────────────────────────── */
+  function openPopup(btn) {
+
+    /* Reset UI state */
+    selectedOpts    = {};
+    fb.textContent  = '';
+    fb.classList.remove('is-err');
+    atcLabel.textContent = 'ADD TO CART';
+    atcBtn.disabled = false;
+
+    /* ── Static fields from data-attributes ── */
+    popImg.src          = btn.dataset.img;
+    popImg.alt          = btn.dataset.title;
+    popTitle.textContent = btn.dataset.title;
+    popPrice.textContent = btn.dataset.price;
+    popDesc.textContent  = btn.dataset.desc;
+    activeHandle         = btn.dataset.handle;
+
+    /* ── Parse variant data (Liquid HTML-escaped the JSON) ── */
+    allVariants = JSON.parse(htmlDecode(btn.dataset.variants));
+    const options = JSON.parse(htmlDecode(btn.dataset.options));
+
+    /* ── Build variant selector controls ── */
+    buildControls(options);
+
+    /* ── Show popup ── */
+    popup.setAttribute('aria-hidden', 'false');
+    popup.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    closeBtn.focus();
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     CLOSE POPUP
+  ────────────────────────────────────────────────────────────── */
+  function closePopup() {
+    popup.classList.remove('is-open');
+    popup.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     BUILD VARIANT CONTROLS
+     Logic:
+       - "Size" option  → <select> dropdown (matching Figma)
+       - all other opts → pill buttons      (matching Figma)
+  ────────────────────────────────────────────────────────────── */
+  function buildControls(options) {
+    controls.innerHTML = '';
+
+    options.forEach(function (opt) {
+      const group = document.createElement('div');
+      group.className = 'pgp-opt';
+
+      /* Label */
+      const lbl       = document.createElement('span');
+      lbl.className   = 'pgp-opt__label';
+      lbl.textContent = opt.name;
+      group.appendChild(lbl);
+
+      if (opt.name.toLowerCase() === 'size') {
+        /* ── Dropdown ── */
+        group.appendChild(buildSizeDropdown(opt));
+      } else {
+        /* ── Pill buttons ── */
+        group.appendChild(buildPills(opt));
+      }
+
+      controls.appendChild(group);
+    });
+
+    /* Sync price with initial pre-selection */
+    syncVariant();
+  }
+
+  /* Build a <select> dropdown for Size */
+  function buildSizeDropdown(opt) {
+    const wrap      = document.createElement('div');
+    wrap.className  = 'pgp-opt__select-wrap';
+
+    const sel       = document.createElement('select');
+    sel.className   = 'pgp-select';
+    sel.dataset.opt = opt.name;
+
+    /* Placeholder */
+    const ph        = new Option('Choose your size', '', true, true);
+    ph.disabled     = true;
+    sel.appendChild(ph);
+
+    opt.values.forEach(function (val) {
+      sel.appendChild(new Option(val, val));
+    });
+
+    sel.addEventListener('change', function () {
+      selectedOpts[opt.name] = sel.value;
+      fb.textContent = '';
+      fb.classList.remove('is-err');
+      syncVariant();
+    });
+
+    /* Chevron icon */
+    const chev      = document.createElement('span');
+    chev.className  = 'pgp-opt__chevron';
+    chev.setAttribute('aria-hidden', 'true');
+    chev.textContent = '▾';
+
+    wrap.appendChild(sel);
+    wrap.appendChild(chev);
+    return wrap;
+  }
+
+  /* Build pill buttons for Color / other options */
+  function buildPills(opt) {
+    const row     = document.createElement('div');
+    row.className = 'pgp-opt__pills';
+
+    opt.values.forEach(function (val, idx) {
+      const pill           = document.createElement('button');
+      pill.type            = 'button';
+      pill.className       = 'pgp-pill';
+      pill.textContent     = val;
+      pill.dataset.opt     = opt.name;
+      pill.dataset.val     = val;
+
+      /* Pre-select first value */
+      if (idx === 0) {
+        pill.classList.add('is-sel');
+        selectedOpts[opt.name] = val;
+      }
+
+      pill.addEventListener('click', function () {
+        /* Toggle selected state within this group */
+        row.querySelectorAll('.pgp-pill').forEach(function (p) {
+          p.classList.remove('is-sel');
+        });
+        pill.classList.add('is-sel');
+        selectedOpts[opt.name] = val;
+        fb.textContent = '';
+        fb.classList.remove('is-err');
+        syncVariant();
+      });
+
+      row.appendChild(pill);
+    });
+
+    return row;
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     SYNC VARIANT
+     Match current selectedOpts to a variant; update price & ATC.
+  ────────────────────────────────────────────────────────────── */
+  function syncVariant() {
+    const match = findMatchingVariant();
+
+    if (match) {
+      popPrice.textContent    = formatMoney(match.price);
+      atcBtn.dataset.variantId = String(match.id);
+      atcBtn.disabled         = !match.available;
+      atcLabel.textContent    = match.available ? 'ADD TO CART' : 'SOLD OUT';
+    } else {
+      /* Partial selection — no exact match yet */
+      atcBtn.dataset.variantId = '';
+    }
+  }
+
+  /* Find the variant whose option values match all selectedOpts */
+  function findMatchingVariant() {
+    const optKeys = Object.keys(selectedOpts);
+    if (optKeys.length === 0) return null;
+
+    return allVariants.find(function (v) {
+      return optKeys.every(function (key, i) {
+        return v['option' + (i + 1)] === selectedOpts[key];
+      });
+    });
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     ADD TO CART
+     Uses Shopify AJAX Cart API — /cart/add.js
+  ────────────────────────────────────────────────────────────── */
+  atcBtn.addEventListener('click', async function () {
+    const variantId = parseInt(atcBtn.dataset.variantId, 10);
+
+    /* Guard: no variant matched yet */
+    if (!variantId) {
+      fb.textContent = 'Please select all options first.';
+      fb.classList.add('is-err');
+      return;
+    }
+
+    /* Disable while processing */
+    atcBtn.disabled       = true;
+    atcLabel.textContent  = 'Adding…';
+
+    try {
+      /* ── Build items array ── */
+      const items = [{ id: variantId, quantity: 1 }];
+
+      /* ── Special rule ──────────────────────────────────────────
+         If the selected variant has BOTH "Black" AND "Medium" as
+         option values, automatically add the "Soft Winter Jacket".
+      ─────────────────────────────────────────────────────────── */
+      const vals      = Object.values(selectedOpts);
+      const hasBlack  = vals.some(function (v) { return v.toLowerCase() === 'black';  });
+      const hasMedium = vals.some(function (v) { return v.toLowerCase() === 'medium'; });
+
+      if (hasBlack && hasMedium) {
+        const jacketId = await getFirstVariantId('soft-winter-jacket');
+        if (jacketId) items.push({ id: jacketId, quantity: 1 });
+      }
+
+      /* ── POST to Shopify ── */
+      const res = await fetch('/cart/add.js', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ items: items })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.description || 'Could not add to cart.');
+      }
+
+      /* ── Success ── */
+      atcLabel.textContent = 'ADDED ✓';
+      fb.textContent       = hasBlack && hasMedium
+        ? 'Added to cart! Soft Winter Jacket also added.'
+        : 'Successfully added to cart!';
+      fb.classList.remove('is-err');
+
+      updateCartBubble();   /* refresh cart icon count in header */
+
+      /* Re-enable button after a short delay */
+      setTimeout(function () {
+        atcBtn.disabled      = false;
+        atcLabel.textContent = 'ADD TO CART';
+        fb.textContent       = '';
+      }, 2800);
+
+    } catch (err) {
+      fb.textContent = err.message || 'Something went wrong. Please try again.';
+      fb.classList.add('is-err');
+      atcBtn.disabled      = false;
+      atcLabel.textContent = 'ADD TO CART';
+    }
+  });
+
+  /* ──────────────────────────────────────────────────────────────
+     HELPERS
+  ────────────────────────────────────────────────────────────── */
+
+  /**
+   * Fetch the first available variant ID for a product by its handle.
+   * Used to auto-add "Soft Winter Jacket".
+   */
+  async function getFirstVariantId(handle) {
+    try {
+      const r = await fetch('/products/' + handle + '.js');
+      if (!r.ok) return null;
+      const data = await r.json();
+      const v    = data.variants.find(function (x) { return x.available; })
+                   || data.variants[0];
+      return v ? v.id : null;
+    } catch { return null; }
+  }
+
+  /**
+   * Refresh Dawn theme's cart item count badge in the header.
+   * Targets common Dawn selectors without a page reload.
+   */
+  function updateCartBubble() {
+    fetch('/cart.js')
+      .then(function (r) { return r.json(); })
+      .then(function (cart) {
+        document.querySelectorAll(
+          '[data-cart-count], .cart-count, .js-cart-count, #CartCount'
+        ).forEach(function (el) {
+          el.textContent = cart.item_count;
+        });
+      })
+      .catch(function () {});
+  }
+
+  /**
+   * Decode HTML entities — needed because Liquid escapes JSON
+   * when outputting it into a data-attribute.
+   */
+  function htmlDecode(str) {
+    const txt   = document.createElement('textarea');
+    txt.innerHTML = str;
+    return txt.value;
+  }
+
+  /**
+   * Format a Shopify price integer (cents) to a display string.
+   * Falls back to a simple €-formatted string if Shopify.formatMoney
+   * is not available.
+   */
+  function formatMoney(cents) {
+    if (typeof Shopify !== 'undefined' && Shopify.formatMoney) {
+      return Shopify.formatMoney(cents, '{{ shop.money_format }}');
+    }
+    /* Simple Euro format fallback */
+    return (cents / 100)
+      .toFixed(2)
+      .replace('.', ',')
+      .replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '\u20AC';
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+     WIRE UP ALL HOTSPOT BUTTONS on DOMContentLoaded
+  ────────────────────────────────────────────────────────────── */
+  document.querySelectorAll('.pg__dot:not([disabled])').forEach(function (btn) {
+    btn.addEventListener('click', function () { openPopup(btn); });
+  });
+
+  /* Close triggers */
+  closeBtn.addEventListener('click', closePopup);
+  backdrop.addEventListener('click', closePopup);
+
+  /* Escape key */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && popup.classList.contains('is-open')) {
+      closePopup();
+    }
+  });
+
+}());
+</script>
+
+
+{%- comment -%} ============================================================
+    SCHEMA — Customizer settings
+    ============================================================ {%- endcomment -%}
+{% schema %}
+{
+  "name": "Custom Product Grid",
+  "tag": "section",
+  "class": "pg-section",
+  "max_blocks": 6,
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Section Heading",
+      "default": "Tisso vison in the wild"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product",
+      "name": "Product",
+      "settings": [
+        {
+          "type": "product",
+          "id": "product",
+          "label": "Select Product"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Custom Product Grid",
+      "blocks": [
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" },
+        { "type": "product" }
+      ]
+    }
+  ]
+}
+{% endschema %}
