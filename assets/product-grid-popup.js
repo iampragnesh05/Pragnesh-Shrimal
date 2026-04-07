@@ -47,6 +47,7 @@
   let optionMap = {}; // maps option name to its position (e.g., { "Size": 1, "Color": 2 })
   const BONUS_JACKET_HANDLE = 'soft-winter-jacket';
   const BONUS_JACKET_TITLE = 'Soft Winter Jacket';
+  const BONUS_DEBUG = true;
 
   /* =========================================================================
      HELPERS
@@ -207,6 +208,12 @@
     setTimeout(function () {
       toast.classList.remove('is-show');
     }, 3000);
+  }
+
+  function showDebug(message) {
+    if (!BONUS_DEBUG) return;
+    console.log('[BONUS DEBUG] ' + message);
+    showToast('[DEBUG] ' + message);
   }
 
   /**
@@ -629,21 +636,37 @@
       const hasMedium = sizeValue === 'medium' || sizeValue === 'm';
 
       console.log('📋 ATC Details:', { variantId, selectedOpts, hasBlack, hasMedium });
+      showDebug(
+        'Condition check -> color="' +
+          colorValue +
+          '", size="' +
+          sizeValue +
+          '", pass=' +
+          String(hasBlack && hasMedium)
+      );
 
       let jacketMessage = '';
       if (hasBlack && hasMedium && activeHandle !== BONUS_JACKET_HANDLE) {
         console.log('🎁 Black+Medium detected. Fetching Soft Winter Jacket...');
+        showDebug('Trying handle: ' + BONUS_JACKET_HANDLE);
         let jacketId = await getFirstVariantId(BONUS_JACKET_HANDLE);
         if (!jacketId) {
+          showDebug('Handle lookup failed. Trying title: ' + BONUS_JACKET_TITLE);
           jacketId = await getFirstVariantIdByTitle(BONUS_JACKET_TITLE);
         }
         if (jacketId) {
           items.push({ id: jacketId, quantity: 1 });
           jacketMessage = ' Soft Winter Jacket also added.';
           console.log('✅ Jacket variant added:', jacketId);
+          showDebug('Resolved jacket variant id: ' + String(jacketId));
         } else {
           console.warn('⚠️ Could not resolve Soft Winter Jacket variant id.');
+          showDebug('Could not resolve Soft Winter Jacket variant id');
         }
+      } else if (hasBlack && hasMedium && activeHandle === BONUS_JACKET_HANDLE) {
+        showDebug('Skipped bonus add because active product is Soft Winter Jacket');
+      } else {
+        showDebug('Condition failed, bonus not attempted');
       }
 
       // ── POST to Shopify /cart/add.js ──
