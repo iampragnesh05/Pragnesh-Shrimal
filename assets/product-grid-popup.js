@@ -213,30 +213,30 @@
         variants: allVariants,
         options: options
       });
+
+      // Build variant controls (inside try so options is accessible)
+      buildControls(options);
+
+      // Show popup with accessibility updates
+      popup.setAttribute('aria-hidden', 'false');
+      popup.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+
+      // Focus close button for keyboard users
+      closeBtn.focus();
+
+      // Mobile: scroll popup to top so close button is visible
+      if (isMobileBreakpoint()) {
+        const box = popup.querySelector('.pgp__box');
+        if (box) {
+          box.scrollTop = 0;
+        }
+      }
     } catch (e) {
       console.error('❌ Failed to parse variant data:', e);
       fb.textContent = 'Error loading product data.';
       fb.classList.add('is-err');
       return;
-    }
-
-    // Build variant controls
-    buildControls(options);
-
-    // Show popup with accessibility updates
-    popup.setAttribute('aria-hidden', 'false');
-    popup.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-
-    // Focus close button for keyboard users
-    closeBtn.focus();
-
-    // Mobile: scroll popup to top so close button is visible
-    if (isMobileBreakpoint()) {
-      const box = popup.querySelector('.pgp__box');
-      if (box) {
-        box.scrollTop = 0;
-      }
     }
   }
 
