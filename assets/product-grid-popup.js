@@ -202,8 +202,23 @@
     activeHandle = btn.dataset.handle;
 
     // Parse variant data (HTML-escaped JSON from Liquid)
-    allVariants = JSON.parse(htmlDecode(btn.dataset.variants));
-    const options = JSON.parse(htmlDecode(btn.dataset.options));
+    try {
+      allVariants = JSON.parse(htmlDecode(btn.dataset.variants));
+      const options = JSON.parse(htmlDecode(btn.dataset.options));
+      
+      console.log('🎯 Popup Opened:', {
+        title: btn.dataset.title,
+        variantCount: allVariants.length,
+        optionsCount: options.length,
+        variants: allVariants,
+        options: options
+      });
+    } catch (e) {
+      console.error('❌ Failed to parse variant data:', e);
+      fb.textContent = 'Error loading product data.';
+      fb.classList.add('is-err');
+      return;
+    }
 
     // Build variant controls
     buildControls(options);
@@ -249,9 +264,13 @@
   */
 
   function buildControls(options) {
+    console.log('🛠️ Building controls for options:', options);
+    
     controls.innerHTML = '';
 
     options.forEach(function (opt) {
+      console.log(`  📋 Building option group: ${opt.name}`, opt.values);
+      
       const group = document.createElement('div');
       group.className = 'pgp-opt';
 
@@ -273,6 +292,7 @@
     });
 
     // Pre-sync variant on initial build (so first color is selected)
+    console.log('⏳ Pre-syncing variant after build...');
     syncVariant();
   }
 
@@ -304,6 +324,8 @@
 
       pill.addEventListener('click', function (e) {
         e.preventDefault();
+        console.log('🎨 Color pill clicked:', val);
+        
         // Deselect all pills in this group
         row.querySelectorAll('.pgp-pill').forEach(function (p) {
           p.classList.remove('is-sel');
@@ -311,6 +333,9 @@
         // Select clicked pill
         pill.classList.add('is-sel');
         selectedOpts[opt.name] = val;
+        
+        console.log('📌 Updated selectedOpts:', selectedOpts);
+        
         // Clear error message
         fb.textContent = '';
         fb.classList.remove('is-err');
@@ -373,10 +398,15 @@
 
       item.addEventListener('click', function (e) {
         e.preventDefault();
+        console.log('📏 Size selected:', val);
+        
         // Update trigger text
         triggerText.textContent = val;
         // Update selected options
         selectedOpts[opt.name] = val;
+        
+        console.log('📌 Updated selectedOpts:', selectedOpts);
+        
         // Close dropdown
         trigger.setAttribute('aria-expanded', 'false');
         list.style.display = 'none';
@@ -445,15 +475,35 @@
   function syncVariant() {
     const match = findMatchingVariant();
 
+    console.log('🔄 Syncing variant:', {
+      selectedOpts: selectedOpts,
+      matchFound: !!match,
+      variant: match,
+      allVariants: allVariants
+    });
+
     if (match) {
       popPrice.textContent = formatMoney(match.price);
       atcBtn.dataset.variantId = String(match.id);
       atcBtn.disabled = !match.available;
       atcLabel.textContent = match.available ? 'ADD TO CART' : 'SOLD OUT';
+      
+      console.log('✅ Variant matched:', {
+        id: match.id,
+        price: match.price,
+        available: match.available,
+        options: {
+          option1: match.option1,
+          option2: match.option2,
+          option3: match.option3
+        }
+      });
     } else {
       // Partial selection — no exact match yet
       atcBtn.dataset.variantId = '';
       atcBtn.disabled = true;
+      
+      console.log('⚠️ No variant match found yet');
     }
   }
 
@@ -464,11 +514,22 @@
     const optKeys = Object.keys(selectedOpts);
     if (optKeys.length === 0) return null;
 
-    return allVariants.find(function (v) {
-      return optKeys.every(function (key, i) {
-        return v['option' + (i + 1)] === selectedOpts[key];
+    console.log('🔍 Finding variant. Selected options:', optKeys, selectedOpts);
+
+    const match = allVariants.find(function (v) {
+      const matches = optKeys.every(function (key, i) {
+        const optionKey = 'option' + (i + 1);
+        const variantValue = v[optionKey];
+        const selectedValue = selectedOpts[key];
+        
+        console.log(`  Comparing ${optionKey}: "${variantValue}" === "${selectedValue}" ? ${variantValue === selectedValue}`);
+        
+        return variantValue === selectedValue;
       });
+      return matches;
     });
+
+    return match;
   }
 
   /* =========================================================================
@@ -478,12 +539,17 @@
   atcBtn.addEventListener('click', async function () {
     const variantId = parseInt(atcBtn.dataset.variantId, 10);
 
+    console.log('🛒 ATC clicked. Variant ID:', variantId);
+
     // Guard: no variant selected
     if (!variantId) {
+      console.log('❌ No variant selected. Disabled button clicked.');
       fb.textContent = 'Please select all options first.';
       fb.classList.add('is-err');
       return;
     }
+
+    console.log('✅ Valid variant. Proceeding with ATC...');
 
     // Disable button while processing
     atcBtn.disabled = true;
@@ -505,16 +571,22 @@
         return v.toLowerCase() === 'medium';
       });
 
+      console.log('📋 ATC Details:', { variantId, selectedOpts, hasBlack, hasMedium });
+
       let jacketMessage = '';
       if (hasBlack && hasMedium) {
+        console.log('🎁 Black+Medium detected. Fetching Soft Winter Jacket...');
         const jacketId = await getFirstVariantId('soft-winter-jacket');
         if (jacketId) {
           items.push({ id: jacketId, quantity: 1 });
           jacketMessage = ' Soft Winter Jacket also added.';
+          console.log('✅ Jacket variant added:', jacketId);
         }
       }
 
       // ── POST to Shopify /cart/add.js ──
+      console.log('📤 Posting to /cart/add.js:', { items });
+      
       const res = await fetch('/cart/add.js', {
         method: 'POST',
         headers: {
@@ -531,6 +603,7 @@
       }
 
       // ── Success ──
+      console.log('🎉 Successfully added to cart!');
       atcLabel.textContent = 'ADDED ✓';
       showToast('Successfully added to cart!' + jacketMessage);
       updateCartBubble();
@@ -542,6 +615,7 @@
       }, 2800);
 
     } catch (err) {
+      console.error('🔴 ATC Error:', err);
       fb.textContent = err.message || 'Something went wrong. Please try again.';
       fb.classList.add('is-err');
       atcBtn.disabled = false;
