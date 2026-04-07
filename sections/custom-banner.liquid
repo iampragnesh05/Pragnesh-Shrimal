@@ -82,6 +82,15 @@
     transform: translateX(5px);
   }
 
+  /* Mobile menu control: hidden on desktop; layout handled in mobile media query */
+  .custom-banner__menu-btn {
+    display: none;
+  }
+
+  .custom-banner__topbar-actions {
+    display: contents;
+  }
+
   /* ── HERO: FULL WIDTH IMAGE WITH OVERLAY TEXT ── */
   .custom-banner__hero {
     position: relative;
@@ -230,15 +239,88 @@
   /* ── RESPONSIVE (mobile only — desktop base styles unchanged above) ── */
   @media (max-width: 768px) {
     .custom-banner__topbar {
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 12px 20px;
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0;
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 52px;
+      height: auto;
+      padding: 0 14px;
+      margin: 0;
+      position: relative;
+      z-index: 10;
+      border-bottom: 1px solid #eeeeee;
+      background: {{ section.settings.background_color }};
+    }
+
+    .custom-banner__menu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: auto;
+      min-width: 44px;
+      min-height: 44px;
+      margin: 0;
+      padding: 10px;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      color: {{ section.settings.logo_color }};
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      z-index: 2;
+    }
+
+    .custom-banner__menu-btn svg {
+      display: block;
+      width: 22px;
+      height: 22px;
     }
 
     .custom-banner__announcement {
-      order: 3;
-      width: 100%;
+      display: none;
+    }
+
+    .custom-banner__logo {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+      max-width: min(58vw, 240px);
+      margin: 0;
+      padding: 0 8px;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 1px;
       text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .custom-banner__topbar-actions {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: flex-end;
+      min-width: 44px;
+      min-height: 44px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .custom-banner__topbar-btn {
+      padding: 8px 12px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      white-space: nowrap;
     }
 
     .custom-banner {
@@ -316,6 +398,17 @@
 
   <!-- TOP BAR -->
   <div class="custom-banner__topbar">
+    <button
+      type="button"
+      class="custom-banner__menu-btn"
+      aria-label="{{ 'accessibility.menu' | t }}"
+      aria-controls="Details-menu-drawer-container"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+      </svg>
+    </button>
+
     <a href="{{ section.settings.logo_link }}" class="custom-banner__logo">
       {{ section.settings.logo_text }}
     </a>
@@ -324,10 +417,12 @@
       {{ section.settings.topbar_announcement_text }}
     </p>
 
-    <a href="{{ section.settings.topbar_btn_link }}" class="custom-banner__topbar-btn">
-      <span>{{ section.settings.topbar_btn_label }}</span>
-      <span class="btn-arrow">→</span>
-    </a>
+    <div class="custom-banner__topbar-actions">
+      <a href="{{ section.settings.topbar_btn_link }}" class="custom-banner__topbar-btn">
+        <span>{{ section.settings.topbar_btn_label }}</span>
+        <span class="btn-arrow">→</span>
+      </a>
+    </div>
   </div>
 
   <!-- HERO: FULL WIDTH IMAGE + OVERLAY TEXT -->
@@ -368,6 +463,23 @@
   </div>
 
 </section>
+
+<script>
+  (function () {
+    var root = document.getElementById('custom-banner-{{ section.id }}');
+    if (!root) return;
+    var btn = root.querySelector('.custom-banner__menu-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var summary = document.querySelector('#Details-menu-drawer-container summary');
+      if (summary) {
+        summary.click();
+      } else {
+        window.location.assign('{{ routes.all_products_collection_url }}');
+      }
+    });
+  })();
+</script>
 
 {% schema %}
 {
