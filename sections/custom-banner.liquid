@@ -230,6 +230,39 @@
     font-size: 14px;
   }
 
+  /* Mobile-only hero split (hidden on desktop — desktop layout unchanged) */
+  .custom-banner__hero-image--desktop {
+    display: block;
+  }
+
+  .custom-banner__hero-image--mobile {
+    display: none;
+  }
+
+  .custom-banner__hero-mobile-visual {
+    display: none;
+  }
+
+  .custom-banner__overlay--desktop {
+    display: block;
+  }
+
+  .custom-banner__overlay--mobile {
+    display: none;
+  }
+
+  .custom-banner__cta--mobile {
+    display: none;
+  }
+
+  .custom-banner__cta--desktop {
+    display: inline-flex;
+  }
+
+  .custom-banner__content-text {
+    display: contents;
+  }
+
   /* Optional overlay for text readability */
   .custom-banner__overlay {
     position: absolute;
@@ -432,26 +465,87 @@
       margin-bottom: 0;
     }
 
+    /* Hero: 20% text (top) / 80% image + button (bottom); separate mobile image optional */
     .custom-banner__hero {
-      min-height: 480px;
-      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+      padding: 0;
       box-sizing: border-box;
       margin: 0;
     }
 
-    .custom-banner__hero-image {
+    .custom-banner__hero-placeholder--desktop {
+      display: none;
+    }
+
+    .custom-banner__hero-image--desktop {
+      display: none;
+    }
+
+    .custom-banner__hero-image--mobile {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
       object-position: center;
       filter: brightness(0.93);
     }
 
-    .custom-banner__content {
+    .custom-banner__hero-mobile-visual {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-end;
+      flex: 0 0 80%;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .custom-banner__hero-mobile-visual .custom-banner__hero-placeholder {
       position: absolute;
-      top: 50%;
+      inset: 0;
+    }
+
+    .custom-banner__overlay--desktop {
+      display: none;
+    }
+
+    .custom-banner__overlay--mobile {
+      display: block;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .custom-banner__cta--desktop {
+      display: none;
+    }
+
+    .custom-banner__cta--mobile {
+      display: inline-flex;
+      position: absolute;
       left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      z-index: 3;
+      margin: 0;
+      padding: 12px 22px;
+      align-self: center;
+    }
+
+    .custom-banner__content {
+      position: relative;
+      top: auto;
+      left: auto;
       right: auto;
       bottom: auto;
-      transform: translate(-50%, -50%);
+      transform: none;
+      flex: 0 0 20%;
+      min-height: 0;
       max-width: 100%;
       width: 100%;
       display: flex;
@@ -459,32 +553,35 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 0 16px;
+      padding: 16px 20px;
       box-sizing: border-box;
+      z-index: 2;
+      background: {{ section.settings.background_color }};
+    }
+
+    .custom-banner__content-text {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
     }
 
     .custom-banner__heading {
-      font-size: clamp(28px, 7.5vw, 32px);
+      font-size: clamp(22px, 5.5vw, 28px);
       font-weight: 900;
       line-height: 1.12;
-      margin: 0 0 11px;
+      margin: 0 0 8px;
       letter-spacing: -0.5px;
     }
 
     .custom-banner__subtext {
-      font-size: 15px;
-      line-height: 1.5;
+      font-size: 14px;
+      line-height: 1.45;
       color: #555555;
-      margin: 0 0 18px;
-      max-width: 85%;
+      margin: 0;
+      max-width: 92%;
       margin-left: auto;
       margin-right: auto;
-    }
-
-    .custom-banner__cta {
-      margin-top: 10px;
-      padding: 10px 18px;
-      align-self: center;
     }
 
     .custom-banner__announcement-strip {
@@ -632,31 +729,61 @@
     </div>
   {% endif %}
 
-  <!-- HERO: FULL WIDTH IMAGE + OVERLAY TEXT -->
+  {%- liquid
+    assign hero_desktop = section.settings.hero_image
+    assign hero_mobile = section.settings.hero_image_mobile
+    if hero_mobile == blank
+      assign hero_mobile = hero_desktop
+    endif
+  -%}
+  <!-- HERO: FULL WIDTH IMAGE + OVERLAY TEXT (desktop unchanged; mobile uses 20% / 80% split + optional mobile image) -->
   <div class="custom-banner__hero">
 
-    {% if section.settings.hero_image %}
+    {% if hero_desktop %}
       <img
-        class="custom-banner__hero-image"
-        src="{{ section.settings.hero_image | image_url: width: 2000 }}"
-        alt="{{ section.settings.hero_image.alt | escape }}"
+        class="custom-banner__hero-image custom-banner__hero-image--desktop"
+        src="{{ hero_desktop | image_url: width: 2000 }}"
+        alt="{{ hero_desktop.alt | escape }}"
         loading="eager"
         width="2000"
       >
     {% else %}
-      <div class="custom-banner__hero-placeholder">
+      <div class="custom-banner__hero-placeholder custom-banner__hero-placeholder--desktop">
         Add a full-width image in the customizer
       </div>
     {% endif %}
 
-    <!-- Optional dark overlay for text readability -->
-    <div class="custom-banner__overlay"></div>
+    <!-- Optional dark overlay for text readability (desktop full-bleed image) -->
+    <div class="custom-banner__overlay custom-banner__overlay--desktop"></div>
 
-    <!-- Text overlay bottom-left -->
+    <!-- Text overlay bottom-left (desktop); mobile: text block first (top ~20%), then image + button below -->
     <div class="custom-banner__content">
-      <h2 class="custom-banner__heading">{{ section.settings.heading }}</h2>
-      <p class="custom-banner__subtext">{{ section.settings.subtext }}</p>
-      <a href="{{ section.settings.cta_link }}" class="custom-banner__cta">
+      <div class="custom-banner__content-text">
+        <h2 class="custom-banner__heading">{{ section.settings.heading }}</h2>
+        <p class="custom-banner__subtext">{{ section.settings.subtext }}</p>
+      </div>
+      <a href="{{ section.settings.cta_link }}" class="custom-banner__cta custom-banner__cta--desktop">
+        <span>{{ section.settings.cta_label }}</span>
+        <span class="btn-arrow">→</span>
+      </a>
+    </div>
+
+    <div class="custom-banner__hero-mobile-visual">
+      {% if hero_mobile %}
+        <img
+          class="custom-banner__hero-image custom-banner__hero-image--mobile"
+          src="{{ hero_mobile | image_url: width: 1200 }}"
+          alt="{{ hero_mobile.alt | escape }}"
+          loading="eager"
+          width="1200"
+        >
+      {% else %}
+        <div class="custom-banner__hero-placeholder">
+          Add a full-width image in the customizer
+        </div>
+      {% endif %}
+      <div class="custom-banner__overlay custom-banner__overlay--mobile"></div>
+      <a href="{{ section.settings.cta_link }}" class="custom-banner__cta custom-banner__cta--mobile">
         <span>{{ section.settings.cta_label }}</span>
         <span class="btn-arrow">→</span>
       </a>
@@ -851,6 +978,12 @@
       "type": "image_picker",
       "id": "hero_image",
       "label": "Full-Width Banner Image"
+    },
+    {
+      "type": "image_picker",
+      "id": "hero_image_mobile",
+      "label": "Mobile banner image (optional)",
+      "info": "Shown on screens 768px and below. If empty, the desktop image is used. Desktop layout is unchanged."
     },
     {
       "type": "range",
