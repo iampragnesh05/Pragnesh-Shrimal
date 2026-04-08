@@ -172,7 +172,13 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
-  max-width: 1200px;
+}
+
+/* Wider grid only on desktop — mobile/tablet unchanged */
+@media (min-width: 901px) {
+  .pg__grid {
+    max-width: 1400px;
+  }
 }
 
 /* ── Grid cell ── */
