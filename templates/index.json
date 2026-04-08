@@ -17,13 +17,17 @@
         "logo_text": "TISSO VISON",
         "logo_link": "",
         "logo_color": "#111111",
-        "announcement_text": "Find the ideal gift for your loved ones.",
+        "topbar_announcement_text": "Find the ideal gift for your loved ones.",
         "announcement_color": "#333333",
         "topbar_btn_label": "CHOOSE GIFT",
         "topbar_btn_link": "",
         "topbar_btn_bg": "#f0d84a",
         "topbar_btn_color": "#111111",
+        "show_breadcrumb_under_topbar": true,
+        "below_breadcrumb_gift_label": "Choose a Gift",
+        "below_breadcrumb_gift_link": "",
         "hero_image": "shopify://shop_images/Group_1000008197.png",
+        "hero_image_mobile": "shopify://shop_images/Frame.png",
         "banner_height": 600,
         "overlay_color": "#000000",
         "overlay_opacity": 0,
@@ -35,10 +39,9 @@
         "cta_link": "",
         "cta_bg": "#111111",
         "cta_color": "#ffffff",
-        "ticker_text": "SUSTAINABLE, ETHICALLY MADE CLOTHES IN SIZES XXS TO 6XL",
-        "ticker_speed": 30,
-        "ticker_bg": "#ffffff",
-        "ticker_color": "#111111"
+        "announcement_text": "Find the ideal gift for your loved ones.",
+        "announcement_bar_bg": "#ffffff",
+        "announcement_bar_color": "#333333"
       }
     },
     "custom_product_grid_V6cmBf": {
