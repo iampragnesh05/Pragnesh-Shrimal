@@ -28,6 +28,12 @@
     text-transform: uppercase;
     color: {{ section.settings.logo_color }};
     text-decoration: none;
+    {%- if section.settings.logo_background_enabled -%}
+    display: inline-block;
+    background-color: {{ section.settings.logo_background_color }};
+    padding: 8px 16px;
+    border-radius: 4px;
+    {%- endif -%}
   }
 
   .custom-banner__announcement {
@@ -435,7 +441,11 @@
       z-index: 1;
       max-width: min(58vw, 240px);
       margin: 0;
+      {%- if section.settings.logo_background_enabled -%}
+      padding: 6px 12px;
+      {%- else -%}
       padding: 0 8px;
+      {%- endif -%}
       font-size: 20px;
       font-weight: 600;
       letter-spacing: 1px;
@@ -890,6 +900,19 @@
       "id": "logo_color",
       "label": "Logo Text Color",
       "default": "#111111"
+    },
+    {
+      "type": "checkbox",
+      "id": "logo_background_enabled",
+      "label": "Logo background",
+      "default": false,
+      "info": "Adds a colored area behind the logo text."
+    },
+    {
+      "type": "color",
+      "id": "logo_background_color",
+      "label": "Logo background color",
+      "default": "#f5f5f5"
     },
 
     {
