@@ -91,6 +91,10 @@
     display: contents;
   }
 
+  .custom-banner__topbar-spacer {
+    display: none;
+  }
+
   /* Breadcrumb + “Choose a Gift” under top bar */
   .custom-banner__subnav {
     padding: 10px 32px 14px;
@@ -161,6 +165,38 @@
 
   .custom-banner__gift-under-bc .btn-arrow {
     display: inline-block;
+  }
+
+  /* Injected into theme mobile menu drawer (see script) */
+  .menu-drawer .custom-banner__drawer-gift-wrap {
+    flex-shrink: 0;
+    padding: 16px 20px 28px;
+    margin-top: auto;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .menu-drawer .custom-banner__drawer-gift {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .menu-drawer .custom-banner__drawer-gift:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   }
 
   /* ── HERO: FULL WIDTH IMAGE WITH OVERLAY TEXT ── */
@@ -377,22 +413,19 @@
       line-height: 1.2;
     }
 
+    /* Gift CTA lives in mobile menu drawer only — keep layout balance */
     .custom-banner__topbar-actions {
-      display: flex;
+      display: none;
+    }
+
+    .custom-banner__topbar-spacer {
+      display: block;
       flex: 0 0 auto;
-      align-items: center;
-      justify-content: flex-end;
+      width: 44px;
       min-width: 44px;
       min-height: 44px;
       position: relative;
       z-index: 2;
-    }
-
-    .custom-banner__topbar-btn {
-      padding: 8px 12px;
-      font-size: 11px;
-      letter-spacing: 1px;
-      white-space: nowrap;
     }
 
     .custom-banner {
@@ -476,7 +509,14 @@
   }
 </style>
 
-<section class="custom-banner" id="custom-banner-{{ section.id }}">
+<section
+  class="custom-banner"
+  id="custom-banner-{{ section.id }}"
+  data-gift-url="{{ section.settings.topbar_btn_link }}"
+  data-gift-label="{{ section.settings.topbar_btn_label | escape }}"
+  data-gift-bg="{{ section.settings.topbar_btn_bg }}"
+  data-gift-fg="{{ section.settings.topbar_btn_color }}"
+>
 
   <!-- TOP BAR -->
   <div class="custom-banner__topbar">
@@ -505,6 +545,7 @@
         <span class="btn-arrow">→</span>
       </a>
     </div>
+    <span class="custom-banner__topbar-spacer" aria-hidden="true"></span>
   </div>
 
   {%- liquid
@@ -634,16 +675,63 @@
   (function () {
     var root = document.getElementById('custom-banner-{{ section.id }}');
     if (!root) return;
-    var btn = root.querySelector('.custom-banner__menu-btn');
-    if (!btn) return;
-    btn.addEventListener('click', function () {
-      var summary = document.querySelector('#Details-menu-drawer-container summary');
-      if (summary) {
-        summary.click();
-      } else {
-        window.location.assign('{{ routes.all_products_collection_url }}');
-      }
-    });
+
+    var menuBtn = root.querySelector('.custom-banner__menu-btn');
+    if (menuBtn) {
+      menuBtn.addEventListener('click', function () {
+        var summary = document.querySelector('#Details-menu-drawer-container summary');
+        if (summary) {
+          summary.click();
+        } else {
+          window.location.assign('{{ routes.all_products_collection_url }}');
+        }
+      });
+    }
+
+    function isMobileLayout() {
+      return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    function injectGiftIntoDrawer() {
+      if (!isMobileLayout()) return;
+      var url = (root.dataset.giftUrl || '').trim();
+      if (!url) return;
+
+      var details = document.querySelector('#Details-menu-drawer-container');
+      var drawer = details && details.querySelector('.menu-drawer');
+      if (!drawer || drawer.querySelector('.custom-banner__drawer-gift-wrap')) return;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'custom-banner__drawer-gift-wrap';
+
+      var a = document.createElement('a');
+      a.className = 'custom-banner__drawer-gift';
+      a.href = url;
+      a.style.background = root.dataset.giftBg || '';
+      a.style.color = root.dataset.giftFg || '';
+
+      var span = document.createElement('span');
+      span.textContent = root.dataset.giftLabel || '';
+      a.appendChild(span);
+
+      var arrow = document.createElement('span');
+      arrow.className = 'btn-arrow';
+      arrow.setAttribute('aria-hidden', 'true');
+      arrow.textContent = '→';
+      a.appendChild(arrow);
+
+      wrap.appendChild(a);
+      drawer.appendChild(wrap);
+    }
+
+    var detailsEl = document.querySelector('#Details-menu-drawer-container');
+    if (detailsEl) {
+      detailsEl.addEventListener('toggle', function () {
+        if (detailsEl.open) {
+          requestAnimationFrame(injectGiftIntoDrawer);
+        }
+      });
+    }
   })();
 </script>
 
