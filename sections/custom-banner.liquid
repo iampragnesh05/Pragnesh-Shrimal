@@ -466,7 +466,7 @@
       margin-bottom: 0;
     }
 
-    /* Hero: text row + image row. aspect-ratio on mobile-visual gives the image layer a real height (absolute imgs do not create row height). */
+    /* Hero: text row + image row. Fixed height on mobile-visual (absolute imgs do not create row height). */
     .custom-banner__hero {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
@@ -502,8 +502,9 @@
       position: relative;
       overflow: hidden;
       width: 100%;
-      min-height: 240px;
-      aspect-ratio: 4 / 5;
+      height: 264px;
+      min-height: 264px;
+      max-height: 264px;
       align-self: stretch;
     }
 
