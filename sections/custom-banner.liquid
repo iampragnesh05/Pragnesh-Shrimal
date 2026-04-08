@@ -378,7 +378,7 @@
   }
 
   /* ── RESPONSIVE (mobile only — desktop base styles unchanged above) ── */
-  @media (max-width: 768px) {
+  @media screen and (max-width: 768px) {
     .custom-banner__topbar {
       display: flex;
       flex-wrap: nowrap;
@@ -465,11 +465,12 @@
       margin-bottom: 0;
     }
 
-    /* Hero: 20% text (top) / 80% image + button (bottom); separate mobile image optional */
+    /* Hero: text row + image row. aspect-ratio on mobile-visual gives the image layer a real height (absolute imgs do not create row height). */
     .custom-banner__hero {
-      display: flex;
-      flex-direction: column;
-      min-height: 520px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      min-height: 0;
       padding: 0;
       box-sizing: border-box;
       margin: 0;
@@ -495,14 +496,14 @@
     }
 
     .custom-banner__hero-mobile-visual {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      justify-content: flex-end;
-      flex: 0 0 80%;
-      min-height: 0;
+      display: block;
+      grid-row: 2;
       position: relative;
       overflow: hidden;
+      width: 100%;
+      min-height: 240px;
+      aspect-ratio: 4 / 5;
+      align-self: stretch;
     }
 
     .custom-banner__hero-mobile-visual .custom-banner__hero-placeholder {
@@ -544,7 +545,7 @@
       right: auto;
       bottom: auto;
       transform: none;
-      flex: 0 0 20%;
+      grid-row: 1;
       min-height: 0;
       max-width: 100%;
       width: 100%;
@@ -729,17 +730,11 @@
     </div>
   {% endif %}
 
-  {%- liquid
-    assign hero_desktop = section.settings.hero_image
-    assign hero_mobile = section.settings.hero_image_mobile
-    if hero_mobile == blank
-      assign hero_mobile = hero_desktop
-    endif
-  -%}
+  {%- assign hero_desktop = section.settings.hero_image -%}
   <!-- HERO: FULL WIDTH IMAGE + OVERLAY TEXT (desktop unchanged; mobile uses 20% / 80% split + optional mobile image) -->
   <div class="custom-banner__hero">
 
-    {% if hero_desktop %}
+    {% if hero_desktop != blank %}
       <img
         class="custom-banner__hero-image custom-banner__hero-image--desktop"
         src="{{ hero_desktop | image_url: width: 2000 }}"
@@ -769,14 +764,10 @@
     </div>
 
     <div class="custom-banner__hero-mobile-visual">
-      {% if hero_mobile %}
-        <img
-          class="custom-banner__hero-image custom-banner__hero-image--mobile"
-          src="{{ hero_mobile | image_url: width: 1200 }}"
-          alt="{{ hero_mobile.alt | escape }}"
-          loading="eager"
-          width="1200"
-        >
+      {% if section.settings.hero_image_mobile != blank %}
+        {{ section.settings.hero_image_mobile | image_url: width: 1500 | image_tag: class: 'custom-banner__hero-image custom-banner__hero-image--mobile', loading: 'eager', sizes: '100vw', widths: '375, 550, 750, 1100, 1500', width: section.settings.hero_image_mobile.width, height: section.settings.hero_image_mobile.height }}
+      {% elsif hero_desktop != blank %}
+        {{ hero_desktop | image_url: width: 1500 | image_tag: class: 'custom-banner__hero-image custom-banner__hero-image--mobile', loading: 'eager', sizes: '100vw', widths: '375, 550, 750, 1100, 1500', width: hero_desktop.width, height: hero_desktop.height }}
       {% else %}
         <div class="custom-banner__hero-placeholder">
           Add a full-width image in the customizer
@@ -816,7 +807,7 @@
     }
 
     function isMobileLayout() {
-      return window.matchMedia('(max-width: 768px)').matches;
+      return window.matchMedia('screen and (max-width: 768px)').matches;
     }
 
     function injectGiftIntoDrawer() {
